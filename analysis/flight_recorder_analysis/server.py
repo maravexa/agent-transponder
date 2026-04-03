@@ -25,7 +25,7 @@ from typing import Any
 from flight_recorder_analysis.config import AnalysisConfig
 from flight_recorder_analysis.detectors import DriftDetector, LoopDetector, ToolMisuseDetector
 from flight_recorder_analysis.detectors.base import BaseDetector
-from flight_recorder_analysis.models import Detection, DetectionType, Event, EventType, Severity
+from flight_recorder_analysis.models import Detection, DetectionType, Event, Severity
 
 logger = logging.getLogger(__name__)
 

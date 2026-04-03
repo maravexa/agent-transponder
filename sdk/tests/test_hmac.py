@@ -7,15 +7,12 @@ import hashlib
 import hmac as stdlib_hmac
 import json
 
-import pytest
-
 from agent_transponder.events import (
     ErrorData,
     Event,
     EventType,
     PromptData,
     ResponseData,
-    Severity,
     ToolCallData,
 )
 from agent_transponder.hmac import sign_event, verify_event, _canonical_json
@@ -237,7 +234,7 @@ def test_sign_event_response_event():
         type=EventType.RESPONSE,
         response=ResponseData(content="ok", finish_reason="stop", token_count=2),
     )
-    digest = sign_event(event, KEY_A)
+    sign_event(event, KEY_A)
     assert verify_event(event, KEY_A) is True
 
 
