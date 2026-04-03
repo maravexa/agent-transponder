@@ -80,11 +80,11 @@ type Querier interface {
 
 // AuditFilter defines search criteria for audit entries.
 type AuditFilter struct {
-	ActorID  string
-	Actions  []ActionType
-	Outcomes []Outcome
 	After    time.Time
 	Before   time.Time
+	ActorID  string
 	Resource string
+	Actions  []ActionType
+	Outcomes []Outcome
 	Limit    int
 }

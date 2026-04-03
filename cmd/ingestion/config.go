@@ -14,11 +14,11 @@ type Config struct {
 	TLS        TLSFileConfig          `yaml:"tls"`
 	EventStore EventStoreConfig       `yaml:"event_store"`
 	Audit      AuditConfig            `yaml:"audit"`
-	Analysis   AnalysisConfig         `yaml:"analysis"`
-	Redaction  RedactionConfig        `yaml:"redaction"`
 	Policy     PolicyConfig           `yaml:"policy"`
-	Agents     map[string]AgentConfig `yaml:"agents"`
 	Logging    LoggingConfig          `yaml:"logging"`
+	Agents     map[string]AgentConfig `yaml:"agents"`
+	Redaction  RedactionConfig        `yaml:"redaction"`
+	Analysis   AnalysisConfig         `yaml:"analysis"`
 	Retention  RetentionConfig        `yaml:"retention"`
 }
 

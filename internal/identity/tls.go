@@ -22,10 +22,10 @@ type TLSProvider struct {
 
 // TLSProviderConfig holds the paths and keys needed for the TLS provider.
 type TLSProviderConfig struct {
+	HMACKeys map[string][]byte // AgentID -> HMAC key mapping
 	CAPath   string            // Path to CA certificate PEM
 	CertPath string            // Path to server certificate PEM
 	KeyPath  string            // Path to server private key PEM
-	HMACKeys map[string][]byte // AgentID -> HMAC key mapping
 }
 
 // NewTLSProvider creates a provider that validates client certs against a local CA.

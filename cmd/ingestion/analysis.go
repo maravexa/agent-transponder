@@ -30,19 +30,17 @@ const (
 // AnalysisForwarder buffers events and forwards them to the analysis engine
 // in batches. All submit calls are non-blocking.
 type AnalysisForwarder struct {
-	cfg     AnalysisConfig
-	logger  *slog.Logger
-	conn    *grpc.ClientConn
-	client  pb.AnalysisServiceClient
-	eventCh chan *types.Event
-	cancel  context.CancelFunc
-
+	logger    *slog.Logger
+	conn      *grpc.ClientConn
+	client    pb.AnalysisServiceClient
+	eventCh   chan *types.Event
+	cancel    context.CancelFunc
 	openUntil time.Time
-
-	wg       sync.WaitGroup
-	mu       sync.Mutex
-	circuit  circuitState
-	failures int
+	cfg       AnalysisConfig
+	wg        sync.WaitGroup
+	mu        sync.Mutex
+	failures  int
+	circuit   circuitState
 }
 
 // NewAnalysisForwarder creates a forwarder. Connection failures at startup are

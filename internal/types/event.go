@@ -96,9 +96,9 @@ type ResponseData struct {
 // ToolCallData captures a tool invocation and its result.
 type ToolCallData struct {
 	ToolName   string          `json:"tool_name"`
+	ErrorMsg   string          `json:"error_msg,omitempty"`
 	Arguments  json.RawMessage `json:"arguments,omitempty"` // Preserved as raw JSON
 	Result     json.RawMessage `json:"result,omitempty"`    // Preserved as raw JSON
-	ErrorMsg   string          `json:"error_msg,omitempty"`
 	RetryCount int             `json:"retry_count,omitempty"`
 	Success    bool            `json:"success"`
 }
@@ -160,8 +160,8 @@ type Detection struct {
 	Type       DetectionType `json:"type"`
 	Severity   Severity      `json:"severity"`
 	Message    string        `json:"message"`
-	EventIDs   []string      `json:"event_ids"` // Events that triggered this detection
 	Evidence   string        `json:"evidence,omitempty"`
+	EventIDs   []string      `json:"event_ids"`  // Events that triggered this detection
 	Confidence float64       `json:"confidence"` // 0.0–1.0
 }
 

@@ -128,9 +128,9 @@ func (s *IngestionServer) IngestEvent(ctx context.Context, req *pb.IngestEventRe
 
 	// ── 4. Verify HMAC integrity ────────────────────────────────────────────
 	if len(hmacKey) > 0 {
-		ok, err := event.VerifyHMAC(hmacKey)
-		if err != nil {
-			s.logger.Warn("HMAC verification error", "event_id", event.ID, "err", err)
+		ok, hmacErr := event.VerifyHMAC(hmacKey)
+		if hmacErr != nil {
+			s.logger.Warn("HMAC verification error", "event_id", event.ID, "err", hmacErr)
 			s.collector.EventsRejected.WithLabelValues("hmac_error").Inc()
 			return &pb.IngestEventResponse{
 				Accepted:        false,
@@ -152,13 +152,13 @@ func (s *IngestionServer) IngestEvent(ctx context.Context, req *pb.IngestEventRe
 	}
 
 	// ── 5. Schema validation ────────────────────────────────────────────────
-	if err := validateEvent(event); err != nil {
-		s.logger.Warn("schema validation failed", "event_id", event.ID, "err", err)
+	if valErr := validateEvent(event); valErr != nil {
+		s.logger.Warn("schema validation failed", "event_id", event.ID, "err", valErr)
 		s.collector.EventsRejected.WithLabelValues("schema_violation").Inc()
 		return &pb.IngestEventResponse{
 			Accepted:        false,
 			RejectionReason: "schema_violation",
-			Error:           err.Error(),
+			Error:           valErr.Error(),
 		}, nil
 	}
 
@@ -326,5 +326,3 @@ func (s *IngestionServer) logAudit(
 	s.collector.AuditEntriesTotal.Inc()
 	return err
 }
-
-

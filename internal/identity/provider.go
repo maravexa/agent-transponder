@@ -13,8 +13,8 @@ import (
 type AgentIdentity struct {
 	AgentID  string // Unique agent identifier (from cert SAN or SPIFFE ID)
 	TenantID string // Tenant this agent belongs to (from cert OU or SPIFFE trust domain)
-	HMACKey  []byte // Per-agent key for event HMAC verification
 	Raw      string // The raw identity string (cert SAN, SPIFFE URI, etc.)
+	HMACKey  []byte // Per-agent key for event HMAC verification
 }
 
 // Provider validates inbound connections and extracts agent identity.
