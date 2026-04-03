@@ -16,16 +16,16 @@ import (
 // It stores wrapped DEKs in a JSON file, with the KEK held in memory
 // (loaded from an environment variable or key file at startup).
 type LocalManager struct {
-	kek       []byte          // Key encryption key (32 bytes, AES-256)
 	deks      map[string]*DEK // bucketID -> DEK
 	storePath string
+	kek       []byte // Key encryption key (32 bytes, AES-256)
 	mu        sync.RWMutex
 }
 
 // LocalManagerConfig holds configuration for the local key manager.
 type LocalManagerConfig struct {
-	KEK       []byte // 32-byte key encryption key
 	StorePath string // Path to the wrapped DEK store file
+	KEK       []byte // 32-byte key encryption key
 }
 
 // NewLocalManager creates a key manager that stores wrapped DEKs locally.

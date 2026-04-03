@@ -28,8 +28,8 @@ type Pattern struct {
 // It applies a configurable list of regex patterns to scrub secrets,
 // PII, and other sensitive data from event content fields.
 type RegexRedactor struct {
-	patterns []Pattern
 	marker   string
+	patterns []Pattern
 }
 
 // DefaultPatterns returns the built-in redaction patterns for common secrets.

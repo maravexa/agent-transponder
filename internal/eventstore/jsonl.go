@@ -18,9 +18,9 @@ import (
 // It writes events as newline-delimited JSON to append-only files,
 // bucketed by date for retention management.
 type JSONLStore struct {
-	basePath string
 	writers  map[string]*bufio.Writer
 	files    map[string]*os.File
+	basePath string
 	mu       sync.Mutex
 }
 

@@ -14,17 +14,17 @@ import (
 // It loads rules from a YAML config file and enforces token-bucket rate limiting.
 type ConfigEngine struct {
 	configPath string
-	rules      PolicyRules
 	buckets    map[string]*tokenBucket // agentID -> bucket
+	rules      PolicyRules
 	mu         sync.RWMutex
 }
 
 // PolicyRules is the YAML-serializable policy configuration.
 type PolicyRules struct {
-	DefaultRateLimit RateLimitConfig            `yaml:"default_rate_limit"`
 	AgentOverrides   map[string]RateLimitConfig `yaml:"agent_overrides"`
 	AllowedActions   map[string][]string        `yaml:"allowed_actions"` // agentID -> actions
 	DenyList         []string                   `yaml:"deny_list"`       // Blocked agent IDs
+	DefaultRateLimit RateLimitConfig            `yaml:"default_rate_limit"`
 }
 
 // RateLimitConfig defines the token bucket parameters.

@@ -33,12 +33,12 @@ type Store interface {
 
 // QueryFilter defines criteria for retrieving events.
 type QueryFilter struct {
+	After     time.Time
+	Before    time.Time
 	SessionID string
 	AgentID   string
 	TenantID  string
 	Types     []types.EventType
-	After     time.Time
-	Before    time.Time
 	Limit     int
 }
 
