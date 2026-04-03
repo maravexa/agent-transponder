@@ -1,0 +1,9 @@
+# GoReleaser builds the binary and COPYs it in.
+# This Dockerfile just sets up the minimal runtime.
+FROM gcr.io/distroless/static-debian12:nonroot
+
+COPY passwd /etc/passwd
+COPY at-* /
+
+USER 65534:65534
+ENTRYPOINT ["/at-ingestion"]

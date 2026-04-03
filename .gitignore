@@ -1,0 +1,49 @@
+# ── Build artifacts ──
+bin/
+dist/
+sbom/
+reports/
+
+# ── Go ──
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+vendor/
+
+# ── Python ──
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+.eggs/
+*.whl
+.venv/
+venv/
+
+# ── Certificates (NEVER commit) ──
+certs/
+
+# ── IDE ──
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── Docker ──
+.docker/
+
+# ── OS ──
+.DS_Store
+Thumbs.db
+
+# ── Config overrides ──
+config/local.yaml
+*.local.yaml
+.env
+.env.*

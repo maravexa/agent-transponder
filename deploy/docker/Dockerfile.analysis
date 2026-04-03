@@ -1,0 +1,66 @@
+# ============================================================
+# Stage 1: Build dependencies with hashes
+# ============================================================
+FROM python:3.12-slim-bookworm AS builder
+
+WORKDIR /build
+
+# Install build tools
+RUN pip install --no-cache-dir pip-tools
+
+# Copy and compile deterministic requirements
+COPY analysis/pyproject.toml analysis/requirements.in ./
+RUN pip-compile \
+    --generate-hashes \
+    --output-file=requirements.txt \
+    requirements.in
+
+# Install into a virtual env for clean copy
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+RUN pip install --no-cache-dir --require-hashes -r requirements.txt
+
+# Copy and install the analysis package itself
+COPY analysis/ ./analysis/
+RUN pip install --no-cache-dir --no-deps ./analysis/
+
+# ============================================================
+# Stage 2: Runtime — minimal, nonroot, read-only
+# ============================================================
+FROM python:3.12-slim-bookworm
+
+LABEL org.opencontainers.image.title="at-analysis"
+LABEL org.opencontainers.image.description="Agent Transponder Analysis Engine (sandboxed)"
+
+# Remove unnecessary packages and tools to reduce attack surface
+RUN apt-get update && \
+    apt-get remove --purge -y \
+      wget curl netcat-openbsd && \
+    apt-get autoremove -y && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /root/.cache && \
+    # Remove package manager itself — nothing should be installed at runtime
+    rm -rf /usr/bin/apt* /usr/bin/dpkg*
+
+# Create nonroot user
+RUN groupadd -r atanalysis && \
+    useradd -r -g atanalysis -d /home/atanalysis -s /usr/sbin/nologin atanalysis && \
+    mkdir -p /home/atanalysis/tmp && \
+    chown -R atanalysis:atanalysis /home/atanalysis
+
+# Copy virtualenv from builder
+COPY --from=builder --chown=atanalysis:atanalysis /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# gRPC listen port
+EXPOSE 50051
+
+# Run as nonroot
+USER atanalysis:atanalysis
+WORKDIR /home/atanalysis
+
+# Tmpdir for any transient analysis work
+ENV TMPDIR=/home/atanalysis/tmp
+
+ENTRYPOINT ["python", "-m", "agent_transponder_analysis.server"]

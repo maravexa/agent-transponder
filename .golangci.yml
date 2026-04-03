@@ -1,0 +1,58 @@
+# .golangci.yml — Security-focused Go linting configuration
+run:
+  timeout: 5m
+  modules-download-mode: readonly
+
+linters:
+  enable:
+    # Security
+    - gosec          # Security-oriented linting
+    - bodyclose      # HTTP response body close
+    - noctx          # HTTP requests without context
+    - rowserrcheck   # sql.Rows.Err() check
+    - sqlclosecheck  # sql.Rows.Close() check
+
+    # Correctness
+    - govet          # Official Go vet
+    - staticcheck    # Comprehensive static analysis
+    - errcheck       # Unchecked errors
+    - ineffassign    # Unused assignments
+    - typecheck       # Type checking
+
+    # Code quality
+    - gofmt
+    - goimports
+    - misspell
+    - unconvert
+    - unparam
+    - unused
+    - prealloc
+
+    # Complexity
+    - gocyclo
+    - gocognit
+
+linters-settings:
+  gosec:
+    severity: high
+    confidence: medium
+    excludes: []
+
+  gocyclo:
+    min-complexity: 15
+
+  gocognit:
+    min-complexity: 20
+
+  govet:
+    enable-all: true
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  exclude-rules:
+    # Allow test files to be less strict
+    - path: _test\.go
+      linters:
+        - gosec
+        - errcheck

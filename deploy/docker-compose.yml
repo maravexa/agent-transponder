@@ -1,0 +1,181 @@
+# docker-compose.yml — Agent Transponder v0.1.0 local stack
+# Run: task certs && task docker && task up
+
+services:
+  # ──────────────────────────────────────────────
+  # Core — Go Ingestion API
+  # ──────────────────────────────────────────────
+  ingestion:
+    image: ${REGISTRY:-ghcr.io/local}/agent-transponder/ingestion:${VERSION:-latest}
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.ingestion
+    ports:
+      - "8443:8443"   # mTLS ingestion endpoint
+      - "8081:8081"   # Health check (plaintext, localhost)
+    volumes:
+      # TLS certificates (read-only)
+      - ../../certs/ca.pem:/etc/at/certs/ca.pem:ro
+      - ../../certs/ingestion.pem:/etc/at/certs/server.pem:ro
+      - ../../certs/ingestion-key.pem:/etc/at/certs/server-key.pem:ro
+      # Event store (append-only)
+      - event-store:/data/events
+      # Audit log (separate volume — critical for integrity)
+      - audit-log:/data/audit
+      # Configuration
+      - ../../config/ingestion.yaml:/etc/at/config.yaml:ro
+    environment:
+      AT_TLS_CA: /etc/at/certs/ca.pem
+      AT_TLS_CERT: /etc/at/certs/server.pem
+      AT_TLS_KEY: /etc/at/certs/server-key.pem
+      AT_LISTEN_ADDR: ":8443"
+      AT_HEALTH_ADDR: ":8081"
+      AT_EVENT_STORE_PATH: /data/events
+      AT_AUDIT_LOG_PATH: /data/audit
+      AT_ANALYSIS_ADDR: "analysis:50051"
+      AT_LOG_FORMAT: json
+    depends_on:
+      analysis:
+        condition: service_started
+    # Security: read-only root filesystem
+    read_only: true
+    tmpfs:
+      - /tmp:size=64M
+    security_opt:
+      - no-new-privileges:true
+    # Drop all capabilities, add only what's needed
+    cap_drop:
+      - ALL
+    networks:
+      - internal
+      - ingestion
+
+  # ──────────────────────────────────────────────
+  # Core — Python Analysis Engine
+  # ──────────────────────────────────────────────
+  analysis:
+    image: ${REGISTRY:-ghcr.io/local}/agent-transponder/analysis:${VERSION:-latest}
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.analysis
+    volumes:
+      # TLS for gRPC (internal mTLS)
+      - ../../certs/ca.pem:/etc/at/certs/ca.pem:ro
+      - ../../certs/analysis.pem:/etc/at/certs/server.pem:ro
+      - ../../certs/analysis-key.pem:/etc/at/certs/server-key.pem:ro
+    environment:
+      AT_GRPC_LISTEN: "0.0.0.0:50051"
+      AT_TLS_CA: /etc/at/certs/ca.pem
+      AT_TLS_CERT: /etc/at/certs/server.pem
+      AT_TLS_KEY: /etc/at/certs/server-key.pem
+    read_only: true
+    tmpfs:
+      - /home/atanalysis/tmp:size=128M
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    # Sandboxing: analysis has NO external network access
+    networks:
+      - internal
+
+  # ──────────────────────────────────────────────
+  # Core — Go Metrics Exporter
+  # ──────────────────────────────────────────────
+  exporter:
+    image: ${REGISTRY:-ghcr.io/local}/agent-transponder/exporter:${VERSION:-latest}
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.exporter
+    ports:
+      - "9090:9090"
+    volumes:
+      - event-store:/data/events:ro
+    environment:
+      AT_METRICS_ADDR: ":9090"
+      AT_EVENT_STORE_PATH: /data/events
+    read_only: true
+    tmpfs:
+      - /tmp:size=32M
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    networks:
+      - internal
+      - monitoring
+
+  # ──────────────────────────────────────────────
+  # Observability — Prometheus
+  # ──────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    ports:
+      - "9091:9090"
+    volumes:
+      - ../../config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=7d"
+      - "--web.enable-lifecycle"
+    read_only: true
+    tmpfs:
+      - /tmp:size=64M
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    networks:
+      - monitoring
+
+  # ──────────────────────────────────────────────
+  # Observability — Grafana
+  # ──────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:10.4.0
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../../config/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana-data:/var/lib/grafana
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: "${GRAFANA_ADMIN_PASSWORD:-changeme}"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    networks:
+      - monitoring
+
+# ──────────────────────────────────────────────
+# Network Segmentation
+# ──────────────────────────────────────────────
+networks:
+  # Agents connect here (external-facing)
+  ingestion:
+    driver: bridge
+
+  # Internal service mesh — ingestion <-> analysis <-> exporter
+  internal:
+    driver: bridge
+    internal: true  # No external access — this isolates the analysis engine
+
+  # Prometheus + Grafana + exporter
+  monitoring:
+    driver: bridge
+
+# ──────────────────────────────────────────────
+# Persistent Volumes
+# ──────────────────────────────────────────────
+volumes:
+  event-store:
+    driver: local
+  audit-log:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local

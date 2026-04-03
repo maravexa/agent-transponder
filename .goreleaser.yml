@@ -1,0 +1,209 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+version: 2
+
+project_name: agent-transponder
+
+before:
+  hooks:
+    - go mod tidy
+    - go mod verify
+
+builds:
+  - id: at-ingestion
+    main: ./cmd/ingestion/
+    binary: at-ingestion
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -buildid=
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.buildTime={{.Date}}
+    flags:
+      - -trimpath
+    mod_timestamp: "{{ .CommitTimestamp }}"
+
+  - id: at-exporter
+    main: ./cmd/exporter/
+    binary: at-exporter
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -buildid=
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.buildTime={{.Date}}
+    flags:
+      - -trimpath
+    mod_timestamp: "{{ .CommitTimestamp }}"
+
+archives:
+  - id: binaries
+    formats: ["tar.gz"]
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+    files:
+      - LICENSE
+      - README.md
+      - SECURITY.md
+
+checksum:
+  name_template: "checksums.txt"
+  algorithm: sha256
+
+# Sigstore keyless signing for binaries
+signs:
+  - cmd: cosign
+    args:
+      - "sign-blob"
+      - "--yes"
+      - "--output-signature=${signature}"
+      - "--output-certificate=${certificate}"
+      - "${artifact}"
+    artifacts: checksum
+
+# Container images built and pushed by GoReleaser
+dockers:
+  # Ingestion API — linux/amd64
+  - id: ingestion-amd64
+    ids: [at-ingestion]
+    goos: linux
+    goarch: amd64
+    dockerfile: deploy/docker/Dockerfile.goreleaser
+    image_templates:
+      - "ghcr.io/{{ .Env.GITHUB_USER }}/agent-transponder/ingestion:{{ .Version }}-amd64"
+    build_flag_templates:
+      - "--label=org.opencontainers.image.title=at-ingestion"
+      - "--label=org.opencontainers.image.version={{ .Version }}"
+      - "--label=org.opencontainers.image.source={{ .GitURL }}"
+      - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
+      - "--label=org.opencontainers.image.created={{ .Date }}"
+    extra_files:
+      - deploy/docker/passwd
+
+  # Ingestion API — linux/arm64
+  - id: ingestion-arm64
+    ids: [at-ingestion]
+    goos: linux
+    goarch: arm64
+    dockerfile: deploy/docker/Dockerfile.goreleaser
+    image_templates:
+      - "ghcr.io/{{ .Env.GITHUB_USER }}/agent-transponder/ingestion:{{ .Version }}-arm64"
+    build_flag_templates:
+      - "--label=org.opencontainers.image.title=at-ingestion"
+      - "--label=org.opencontainers.image.version={{ .Version }}"
+      - "--label=org.opencontainers.image.source={{ .GitURL }}"
+      - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
+      - "--label=org.opencontainers.image.created={{ .Date }}"
+    extra_files:
+      - deploy/docker/passwd
+
+  # Exporter — linux/amd64
+  - id: exporter-amd64
+    ids: [at-exporter]
+    goos: linux
+    goarch: amd64
+    dockerfile: deploy/docker/Dockerfile.goreleaser
+    image_templates:
+      - "ghcr.io/{{ .Env.GITHUB_USER }}/agent-transponder/exporter:{{ .Version }}-amd64"
+    build_flag_templates:
+      - "--label=org.opencontainers.image.title=at-exporter"
+      - "--label=org.opencontainers.image.version={{ .Version }}"
+    extra_files:
+      - deploy/docker/passwd
+
+  # Exporter — linux/arm64
+  - id: exporter-arm64
+    ids: [at-exporter]
+    goos: linux
+    goarch: arm64
+    dockerfile: deploy/docker/Dockerfile.goreleaser
+    image_templates:
+      - "ghcr.io/{{ .Env.GITHUB_USER }}/agent-transponder/exporter:{{ .Version }}-arm64"
+    build_flag_templates:
+      - "--label=org.opencontainers.image.title=at-exporter"
+      - "--label=org.opencontainers.image.version={{ .Version }}"
+    extra_files:
+      - deploy/docker/passwd
+
+# Multi-arch manifest lists
+docker_manifests:
+  - name_template: "ghcr.io/{{ .Env.GITHUB_USER }}/agent-transponder/ingestion:{{ .Version }}"
+    image_templates:
+      - "ghcr.io/{{ .Env.GITHUB_USER }}/agent-transponder/ingestion:{{ .Version }}-amd64"
+      - "ghcr.io/{{ .Env.GITHUB_USER }}/agent-transponder/ingestion:{{ .Version }}-arm64"
+
+  - name_template: "ghcr.io/{{ .Env.GITHUB_USER }}/agent-transponder/ingestion:latest"
+    image_templates:
+      - "ghcr.io/{{ .Env.GITHUB_USER }}/agent-transponder/ingestion:{{ .Version }}-amd64"
+      - "ghcr.io/{{ .Env.GITHUB_USER }}/agent-transponder/ingestion:{{ .Version }}-arm64"
+
+  - name_template: "ghcr.io/{{ .Env.GITHUB_USER }}/agent-transponder/exporter:{{ .Version }}"
+    image_templates:
+      - "ghcr.io/{{ .Env.GITHUB_USER }}/agent-transponder/exporter:{{ .Version }}-amd64"
+      - "ghcr.io/{{ .Env.GITHUB_USER }}/agent-transponder/exporter:{{ .Version }}-arm64"
+
+  - name_template: "ghcr.io/{{ .Env.GITHUB_USER }}/agent-transponder/exporter:latest"
+    image_templates:
+      - "ghcr.io/{{ .Env.GITHUB_USER }}/agent-transponder/exporter:{{ .Version }}-amd64"
+      - "ghcr.io/{{ .Env.GITHUB_USER }}/agent-transponder/exporter:{{ .Version }}-arm64"
+
+# Sign container images
+docker_signs:
+  - cmd: cosign
+    args:
+      - "sign"
+      - "--yes"
+      - "${artifact}"
+    artifacts: all
+
+# SBOM generation for container images
+sboms:
+  - id: container-sboms
+    artifacts: archive
+    cmd: syft
+    args: ["${artifact}", "--output", "spdx-json=${document}"]
+    documents:
+      - "{{ .ArtifactName }}.spdx.json"
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^ci:"
+      - "^chore:"
+  groups:
+    - title: "Security"
+      regexp: '^.*?(sec|vuln|cve|security).*$'
+      order: 0
+    - title: "Features"
+      regexp: '^.*?feat.*$'
+      order: 1
+    - title: "Bug Fixes"
+      regexp: '^.*?fix.*$'
+      order: 2
+
+release:
+  github:
+    owner: "{{ .Env.GITHUB_USER }}"
+    name: agent-transponder
+  prerelease: auto
+  draft: false
+  extra_files:
+    - glob: sbom/*.spdx.json
+    - glob: sbom/*.cdx.json

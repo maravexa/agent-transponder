@@ -1,0 +1,283 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+version: "3"
+
+vars:
+  PROJECT: agent-transponder
+  VERSION:
+    sh: git describe --tags --always --dirty 2>/dev/null || echo "0.1.0-dev"
+  COMMIT:
+    sh: git rev-parse --short HEAD 2>/dev/null || echo "unknown"
+  BUILD_TIME:
+    sh: date -u '+%Y-%m-%dT%H:%M:%SZ'
+  GO_LDFLAGS: >-
+    -s -w
+    -X main.version={{.VERSION}}
+    -X main.commit={{.COMMIT}}
+    -X main.buildTime={{.BUILD_TIME}}
+  REGISTRY: ghcr.io/{{.GITHUB_USER}}/{{.PROJECT}}
+  # Override with: task <target> GITHUB_USER=yourusername
+  GITHUB_USER: '{{.GITHUB_USER | default "your-github-username"}}'
+
+env:
+  CGO_ENABLED: "0"
+  GONOSUMCHECK: "off"
+  GOFLAGS: "-trimpath"
+
+tasks:
+  # ──────────────────────────────────────────────
+  # Development
+  # ──────────────────────────────────────────────
+
+  default:
+    desc: Show available tasks
+    cmds:
+      - task --list-all
+
+  setup:
+    desc: Install development dependencies
+    cmds:
+      - go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+      - go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+      - go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+      - pip install --user pip-tools bandit semgrep ruff
+      - echo "Install cosign from https://docs.sigstore.dev/cosign/installation/"
+      - echo "Install syft from https://github.com/anchore/syft#installation"
+      - echo "Install grype from https://github.com/anchore/grype#installation"
+
+  proto:
+    desc: Generate protobuf/gRPC code
+    sources:
+      - proto/**/*.proto
+    cmds:
+      - |
+        protoc --go_out=. --go_opt=paths=source_relative \
+               --go-grpc_out=. --go-grpc_opt=paths=source_relative \
+               proto/agenttransponder/*.proto
+
+  # ──────────────────────────────────────────────
+  # Linting & Static Analysis
+  # ──────────────────────────────────────────────
+
+  lint:
+    desc: Run all linters
+    deps: [lint:go, lint:python, lint:security]
+
+  lint:go:
+    desc: Lint Go code
+    cmds:
+      - golangci-lint run --timeout=5m ./...
+
+  lint:python:
+    desc: Lint Python code
+    cmds:
+      - ruff check sdk/ analysis/
+      - ruff format --check sdk/ analysis/
+
+  lint:security:
+    desc: Static application security testing
+    cmds:
+      - bandit -r sdk/ analysis/ -f json -o reports/bandit.json || true
+      - semgrep scan --config=auto --json -o reports/semgrep.json ./
+      # Go-specific security linting
+      - golangci-lint run --enable=gosec --timeout=5m ./...
+
+  # ──────────────────────────────────────────────
+  # Testing
+  # ──────────────────────────────────────────────
+
+  test:
+    desc: Run all tests
+    deps: [test:go, test:python]
+
+  test:go:
+    desc: Run Go tests with race detection and coverage
+    cmds:
+      - go test -race -coverprofile=reports/coverage.out -covermode=atomic ./...
+      - go tool cover -func=reports/coverage.out
+
+  test:python:
+    desc: Run Python tests
+    cmds:
+      - cd sdk && python -m pytest tests/ -v --tb=short
+      - cd analysis && python -m pytest tests/ -v --tb=short
+
+  # ──────────────────────────────────────────────
+  # Build — Go Binaries
+  # ──────────────────────────────────────────────
+
+  build:
+    desc: Build all Go binaries (local dev)
+    cmds:
+      - task: build:ingestion
+      - task: build:exporter
+
+  build:ingestion:
+    desc: Build ingestion API binary
+    cmds:
+      - go build -ldflags '{{.GO_LDFLAGS}}' -o bin/at-ingestion ./cmd/ingestion/
+
+  build:exporter:
+    desc: Build metrics exporter binary
+    cmds:
+      - go build -ldflags '{{.GO_LDFLAGS}}' -o bin/at-exporter ./cmd/exporter/
+
+  # ──────────────────────────────────────────────
+  # Build — Container Images
+  # ──────────────────────────────────────────────
+
+  docker:
+    desc: Build all container images
+    cmds:
+      - task: docker:ingestion
+      - task: docker:exporter
+      - task: docker:analysis
+
+  docker:ingestion:
+    desc: Build ingestion API image
+    cmds:
+      - |
+        docker build \
+          --build-arg VERSION={{.VERSION}} \
+          --build-arg COMMIT={{.COMMIT}} \
+          --build-arg BUILD_TIME={{.BUILD_TIME}} \
+          -f deploy/docker/Dockerfile.ingestion \
+          -t {{.REGISTRY}}/ingestion:{{.VERSION}} \
+          -t {{.REGISTRY}}/ingestion:latest \
+          .
+
+  docker:exporter:
+    desc: Build metrics exporter image
+    cmds:
+      - |
+        docker build \
+          --build-arg VERSION={{.VERSION}} \
+          --build-arg COMMIT={{.COMMIT}} \
+          --build-arg BUILD_TIME={{.BUILD_TIME}} \
+          -f deploy/docker/Dockerfile.exporter \
+          -t {{.REGISTRY}}/exporter:{{.VERSION}} \
+          -t {{.REGISTRY}}/exporter:latest \
+          .
+
+  docker:analysis:
+    desc: Build analysis engine image
+    cmds:
+      - |
+        docker build \
+          -f deploy/docker/Dockerfile.analysis \
+          -t {{.REGISTRY}}/analysis:{{.VERSION}} \
+          -t {{.REGISTRY}}/analysis:latest \
+          .
+
+  # ──────────────────────────────────────────────
+  # Security — Signing & SBOM
+  # ──────────────────────────────────────────────
+
+  sign:
+    desc: Sign all container images with cosign (keyless/Sigstore)
+    cmds:
+      - cosign sign --yes {{.REGISTRY}}/ingestion:{{.VERSION}}
+      - cosign sign --yes {{.REGISTRY}}/exporter:{{.VERSION}}
+      - cosign sign --yes {{.REGISTRY}}/analysis:{{.VERSION}}
+
+  verify:
+    desc: Verify image signatures
+    cmds:
+      - cosign verify {{.REGISTRY}}/ingestion:{{.VERSION}} --certificate-identity-regexp=".*" --certificate-oidc-issuer-regexp=".*"
+      - cosign verify {{.REGISTRY}}/exporter:{{.VERSION}} --certificate-identity-regexp=".*" --certificate-oidc-issuer-regexp=".*"
+      - cosign verify {{.REGISTRY}}/analysis:{{.VERSION}} --certificate-identity-regexp=".*" --certificate-oidc-issuer-regexp=".*"
+
+  sbom:
+    desc: Generate SBOMs for all images (SPDX + CycloneDX)
+    cmds:
+      - mkdir -p sbom/
+      - task: sbom:generate
+        vars: { COMPONENT: ingestion }
+      - task: sbom:generate
+        vars: { COMPONENT: exporter }
+      - task: sbom:generate
+        vars: { COMPONENT: analysis }
+
+  sbom:generate:
+    desc: Generate SBOM for a single component
+    internal: true
+    cmds:
+      - syft {{.REGISTRY}}/{{.COMPONENT}}:{{.VERSION}} -o spdx-json=sbom/{{.COMPONENT}}.spdx.json
+      - syft {{.REGISTRY}}/{{.COMPONENT}}:{{.VERSION}} -o cyclonedx-json=sbom/{{.COMPONENT}}.cdx.json
+
+  sbom:attest:
+    desc: Attach SBOMs as in-toto attestations to images
+    cmds:
+      - cosign attest --yes --predicate sbom/ingestion.spdx.json --type spdxjson {{.REGISTRY}}/ingestion:{{.VERSION}}
+      - cosign attest --yes --predicate sbom/exporter.spdx.json --type spdxjson {{.REGISTRY}}/exporter:{{.VERSION}}
+      - cosign attest --yes --predicate sbom/analysis.spdx.json --type spdxjson {{.REGISTRY}}/analysis:{{.VERSION}}
+
+  vuln:
+    desc: Scan images for vulnerabilities
+    cmds:
+      - grype {{.REGISTRY}}/ingestion:{{.VERSION}} --fail-on high
+      - grype {{.REGISTRY}}/exporter:{{.VERSION}} --fail-on high
+      - grype {{.REGISTRY}}/analysis:{{.VERSION}} --fail-on high
+
+  # ──────────────────────────────────────────────
+  # Release — GoReleaser
+  # ──────────────────────────────────────────────
+
+  release:snapshot:
+    desc: Build a snapshot release (no publish)
+    cmds:
+      - goreleaser release --snapshot --clean
+
+  release:
+    desc: Build and publish a tagged release
+    cmds:
+      - goreleaser release --clean
+
+  # ──────────────────────────────────────────────
+  # Local Development Stack
+  # ──────────────────────────────────────────────
+
+  up:
+    desc: Start the full local stack via docker-compose
+    cmds:
+      - docker compose -f deploy/docker-compose.yml up -d
+
+  down:
+    desc: Stop the local stack
+    cmds:
+      - docker compose -f deploy/docker-compose.yml down
+
+  logs:
+    desc: Tail logs from the local stack
+    cmds:
+      - docker compose -f deploy/docker-compose.yml logs -f
+
+  # ──────────────────────────────────────────────
+  # Certificate Management (0.1.0 — self-signed)
+  # ──────────────────────────────────────────────
+
+  certs:
+    desc: Generate self-signed CA and component certs for local dev
+    cmds:
+      - bash scripts/generate-certs.sh
+
+  # ──────────────────────────────────────────────
+  # CI Convenience
+  # ──────────────────────────────────────────────
+
+  ci:
+    desc: Run the full CI pipeline locally
+    cmds:
+      - mkdir -p reports/
+      - task: lint
+      - task: test
+      - task: build
+      - task: docker
+      - task: sbom
+      - task: vuln
+      - echo "✅ CI pipeline passed"
+
+  clean:
+    desc: Remove build artifacts
+    cmds:
+      - rm -rf bin/ dist/ sbom/ reports/
+      - docker compose -f deploy/docker-compose.yml down -v --remove-orphans 2>/dev/null || true

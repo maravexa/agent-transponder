@@ -1,0 +1,49 @@
+# ============================================================
+# Stage 1: Build
+# ============================================================
+FROM golang:1.23-bookworm AS builder
+
+ARG VERSION=dev
+ARG COMMIT=unknown
+ARG BUILD_TIME=unknown
+
+WORKDIR /src
+
+# Cache dependency downloads
+COPY go.mod go.sum ./
+RUN go mod download && go mod verify
+
+# Copy source and build
+COPY . .
+RUN CGO_ENABLED=0 go build \
+    -trimpath \
+    -ldflags="-s -w -buildid= \
+      -X main.version=${VERSION} \
+      -X main.commit=${COMMIT} \
+      -X main.buildTime=${BUILD_TIME}" \
+    -o /at-ingestion \
+    ./cmd/ingestion/
+
+# ============================================================
+# Stage 2: Runtime — distroless nonroot
+# ============================================================
+FROM gcr.io/distroless/static-debian12:nonroot
+
+# OCI labels
+LABEL org.opencontainers.image.title="at-ingestion"
+LABEL org.opencontainers.image.description="Agent Transponder Ingestion API"
+LABEL org.opencontainers.image.vendor="Agent Transponder"
+
+# Copy binary — owned by nonroot user (65534)
+COPY --from=builder --chown=65534:65534 /at-ingestion /at-ingestion
+
+# Expose mTLS listener port
+EXPOSE 8443
+
+# Health check port (plaintext, localhost only)
+EXPOSE 8081
+
+# Run as nonroot — UID 65534 is the distroless nonroot user
+USER 65534:65534
+
+ENTRYPOINT ["/at-ingestion"]
