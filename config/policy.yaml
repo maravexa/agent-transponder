@@ -1,0 +1,27 @@
+# Agent Transponder Policy Configuration
+# Controls authorization and rate limiting for all agents.
+
+# Default rate limit applied to all agents unless overridden.
+default_rate_limit:
+  events_per_second: 100.0
+  burst_size: 500
+
+# Per-agent rate limit overrides.
+agent_overrides: {}
+  # Example:
+  # high-throughput-agent:
+  #   events_per_second: 1000.0
+  #   burst_size: 5000
+
+# Agents explicitly blocked from ingestion.
+deny_list: []
+  # Example:
+  # - compromised-agent-id
+  # - decommissioned-agent
+
+# Actions each agent is allowed to perform.
+# If an agent is not listed here, all actions are allowed by default.
+allowed_actions: {}
+  # Example:
+  # restricted-agent:
+  #   - ingest
