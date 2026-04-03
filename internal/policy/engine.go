@@ -14,15 +14,15 @@ import (
 type Decision string
 
 const (
-	DecisionAllow Decision = "allow"
-	DecisionDeny  Decision = "deny"
+	DecisionAllow    Decision = "allow"
+	DecisionDeny     Decision = "deny"
 	DecisionThrottle Decision = "throttle"
 )
 
 // EvalResult is returned by the policy engine for each request.
 type EvalResult struct {
-	Decision Decision
-	Reason   string        // Human-readable explanation
+	Decision   Decision
+	Reason     string        // Human-readable explanation
 	RetryAfter time.Duration // Non-zero if throttled
 }
 

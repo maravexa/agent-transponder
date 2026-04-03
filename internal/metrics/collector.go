@@ -10,21 +10,21 @@ const namespace = "agent_transponder"
 // Collector holds all registered Prometheus metrics.
 type Collector struct {
 	// Ingestion metrics
-	EventsIngested   *prometheus.CounterVec
-	EventsRejected   *prometheus.CounterVec
-	IngestLatency    *prometheus.HistogramVec
+	EventsIngested    *prometheus.CounterVec
+	EventsRejected    *prometheus.CounterVec
+	IngestLatency     *prometheus.HistogramVec
 	ActiveConnections prometheus.Gauge
 
 	// Event store metrics
-	EventsStored    *prometheus.GaugeVec
-	StorageBytes    *prometheus.GaugeVec
-	BucketsActive   prometheus.Gauge
+	EventsStored  *prometheus.GaugeVec
+	StorageBytes  *prometheus.GaugeVec
+	BucketsActive prometheus.Gauge
 
 	// Analysis metrics
-	DetectionsTotal  *prometheus.CounterVec
-	AnalysisLatency  *prometheus.HistogramVec
-	AnalysisBatches  prometheus.Counter
-	AnalysisErrors   prometheus.Counter
+	DetectionsTotal *prometheus.CounterVec
+	AnalysisLatency *prometheus.HistogramVec
+	AnalysisBatches prometheus.Counter
+	AnalysisErrors  prometheus.Counter
 
 	// Audit metrics
 	AuditEntriesTotal prometheus.Counter
@@ -32,9 +32,9 @@ type Collector struct {
 	AuditVerifyResult *prometheus.GaugeVec
 
 	// Key management metrics
-	ActiveDEKs      prometheus.Gauge
-	KeyRotations    prometheus.Counter
-	CryptoShreds    prometheus.Counter
+	ActiveDEKs   prometheus.Gauge
+	KeyRotations prometheus.Counter
+	CryptoShreds prometheus.Counter
 
 	// Rate limiting
 	ThrottledRequests *prometheus.CounterVec

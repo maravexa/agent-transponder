@@ -1,6 +1,7 @@
 """
 Unit tests for agent_transponder.events — no gRPC required.
 """
+
 from __future__ import annotations
 
 import re
@@ -71,6 +72,7 @@ def test_uuid7_time_ordered():
 # ---------------------------------------------------------------------------
 # Event construction tests
 # ---------------------------------------------------------------------------
+
 
 def test_event_defaults():
     event = Event()
@@ -177,6 +179,7 @@ def test_event_labels():
 # Event serialisation tests
 # ---------------------------------------------------------------------------
 
+
 def test_to_dict_basic_fields():
     event = Event(
         agent_id="agent-1",
@@ -246,6 +249,7 @@ def test_to_dict_tool_call_dicts_preserved():
 # Event type / severity enum tests
 # ---------------------------------------------------------------------------
 
+
 def test_event_type_values():
     assert EventType.UNSPECIFIED == 0
     assert EventType.PROMPT == 1
@@ -266,6 +270,7 @@ def test_severity_values():
 # ---------------------------------------------------------------------------
 # Session-like grouping test (without grpc / Transponder)
 # ---------------------------------------------------------------------------
+
 
 def test_multiple_events_share_session_id():
     """Simulate what Session does — set a common session_id on events."""

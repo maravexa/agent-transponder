@@ -23,7 +23,11 @@ import time
 from typing import Any
 
 from flight_recorder_analysis.config import AnalysisConfig
-from flight_recorder_analysis.detectors import DriftDetector, LoopDetector, ToolMisuseDetector
+from flight_recorder_analysis.detectors import (
+    DriftDetector,
+    LoopDetector,
+    ToolMisuseDetector,
+)
 from flight_recorder_analysis.detectors.base import BaseDetector
 from flight_recorder_analysis.models import Detection, DetectionType, Event, Severity
 
@@ -214,7 +218,9 @@ def _build_servicer_class(analysis_pb2: Any, analysis_pb2_grpc: Any) -> type:
                     all_detections.extend(found)
                 except Exception:
                     logger.exception(
-                        json.dumps({"event": "detector_error", "detector": detector.name})
+                        json.dumps(
+                            {"event": "detector_error", "detector": detector.name}
+                        )
                     )
                     found = []
                 latencies[detector.name] = round((time.perf_counter() - dt0) * 1000, 2)
@@ -266,7 +272,9 @@ def _build_servicer_class(analysis_pb2: Any, analysis_pb2_grpc: Any) -> type:
                 analysis_pb2.DetectorInfo(
                     name=d.name,
                     version=d.version,
-                    type=dt_map.get(d.detection_type, analysis_pb2.DETECTION_TYPE_UNSPECIFIED),
+                    type=dt_map.get(
+                        d.detection_type, analysis_pb2.DETECTION_TYPE_UNSPECIFIED
+                    ),
                     enabled=True,
                     description=d.description,
                 )
@@ -309,8 +317,7 @@ def serve(cfg: AnalysisConfig | None = None) -> None:
         from concurrent import futures
     except ImportError as exc:
         raise RuntimeError(
-            "grpcio is required to run the server. "
-            "Install it with: pip install grpcio"
+            "grpcio is required to run the server. Install it with: pip install grpcio"
         ) from exc
 
     # Proto stubs are generated into the same package directory by `task proto`.

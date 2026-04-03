@@ -23,7 +23,9 @@ def _env_int(name: str, default: int) -> int:
     try:
         return int(raw)
     except ValueError as exc:
-        raise ValueError(f"Environment variable {name}={raw!r} must be an integer") from exc
+        raise ValueError(
+            f"Environment variable {name}={raw!r} must be an integer"
+        ) from exc
 
 
 def _env_float(name: str, default: float) -> float:
@@ -33,7 +35,9 @@ def _env_float(name: str, default: float) -> float:
     try:
         return float(raw)
     except ValueError as exc:
-        raise ValueError(f"Environment variable {name}={raw!r} must be a float") from exc
+        raise ValueError(
+            f"Environment variable {name}={raw!r} must be a float"
+        ) from exc
 
 
 # ---------------------------------------------------------------------------
@@ -60,9 +64,7 @@ class ToolMisuseConfig:
     """Configuration for :class:`~detectors.tool_misuse.ToolMisuseDetector`."""
 
     # Maximum retries per (tool, canonical-args) pair before flagging.
-    max_retries: int = field(
-        default_factory=lambda: _env_int("AT_TOOL_MAX_RETRIES", 5)
-    )
+    max_retries: int = field(default_factory=lambda: _env_int("AT_TOOL_MAX_RETRIES", 5))
     # Fraction of calls to a tool that must fail before flagging the tool.
     min_failure_rate: float = field(
         default_factory=lambda: _env_float("AT_TOOL_MIN_FAILURE_RATE", 0.7)

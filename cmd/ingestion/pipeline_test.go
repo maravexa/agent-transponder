@@ -6,49 +6,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/agent-transponder/agent-transponder/internal/audit"
-	"github.com/agent-transponder/agent-transponder/internal/eventstore"
 	"github.com/agent-transponder/agent-transponder/internal/identity"
-	"github.com/agent-transponder/agent-transponder/internal/metrics"
 	"github.com/agent-transponder/agent-transponder/internal/policy"
 	"github.com/agent-transponder/agent-transponder/internal/redaction"
 	"github.com/agent-transponder/agent-transponder/internal/types"
-	"github.com/prometheus/client_golang/prometheus"
 )
-
-// ── stub implementations for testing ─────────────────────────────────────────
-
-// stubStore is an in-memory event store for tests.
-type stubStore struct {
-	events []*types.Event
-}
-
-func (s *stubStore) Append(_ context.Context, e *types.Event) (string, error) {
-	s.events = append(s.events, e)
-	return "test-key/" + e.ID, nil
-}
-func (s *stubStore) Query(_ context.Context, _ eventstore.QueryFilter) ([]*types.Event, error) {
-	return s.events, nil
-}
-func (s *stubStore) Stream(_ context.Context, _ eventstore.QueryFilter) (<-chan *types.Event, error) {
-	ch := make(chan *types.Event)
-	close(ch)
-	return ch, nil
-}
-func (s *stubStore) Close() error { return nil }
-
-// stubAudit records entries for assertion.
-type stubAudit struct {
-	entries []audit.Entry
-}
-
-func (a *stubAudit) Log(_ context.Context, e audit.Entry) error {
-	a.entries = append(a.entries, e)
-	return nil
-}
-func (a *stubAudit) Verify(_ context.Context, _ int64) (int64, error) { return -1, nil }
-func (a *stubAudit) LatestCheckpoint() (string, int64)                { return "", 0 }
-func (a *stubAudit) Close() error                                     { return nil }
 
 // stubPolicy controls policy decisions for tests.
 type stubPolicy struct {
@@ -56,7 +18,7 @@ type stubPolicy struct {
 	reason   string
 }
 
-func (p *stubPolicy) Evaluate(_ context.Context, _ policy.EvalRequest) (*policy.EvalResult, error) {
+func (p *stubPolicy) Evaluate(_ context.Context, _ policy.EvalRequest) (*policy.EvalResult, error) { //nolint:unparam
 	d := p.decision
 	if d == "" {
 		d = policy.DecisionAllow
@@ -65,12 +27,6 @@ func (p *stubPolicy) Evaluate(_ context.Context, _ policy.EvalRequest) (*policy.
 }
 func (p *stubPolicy) Reload(_ context.Context) error { return nil }
 func (p *stubPolicy) Close() error                   { return nil }
-
-// ── test helpers ──────────────────────────────────────────────────────────────
-
-func newTestCollector() *metrics.Collector {
-	return metrics.NewCollector(prometheus.NewRegistry())
-}
 
 func makeEvent(eventType types.EventType) *types.Event {
 	return &types.Event{

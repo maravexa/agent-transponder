@@ -56,3 +56,7 @@ issues:
       linters:
         - gosec
         - errcheck
+    # Skip fieldalignment checks on generated protobuf files
+    - path: \.pb\.go$
+      linters:
+        - govet

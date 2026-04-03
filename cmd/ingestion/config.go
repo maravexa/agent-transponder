@@ -10,16 +10,16 @@ import (
 
 // Config holds all ingestion server configuration.
 type Config struct {
-	Server     ServerConfig              `yaml:"server"`
-	TLS        TLSFileConfig             `yaml:"tls"`
-	EventStore EventStoreConfig          `yaml:"event_store"`
-	Audit      AuditConfig               `yaml:"audit"`
-	Analysis   AnalysisConfig            `yaml:"analysis"`
-	Retention  RetentionConfig           `yaml:"retention"`
-	Redaction  RedactionConfig           `yaml:"redaction"`
-	Policy     PolicyConfig              `yaml:"policy"`
-	Agents     map[string]AgentConfig    `yaml:"agents"`
-	Logging    LoggingConfig             `yaml:"logging"`
+	Server     ServerConfig           `yaml:"server"`
+	TLS        TLSFileConfig          `yaml:"tls"`
+	EventStore EventStoreConfig       `yaml:"event_store"`
+	Audit      AuditConfig            `yaml:"audit"`
+	Analysis   AnalysisConfig         `yaml:"analysis"`
+	Redaction  RedactionConfig        `yaml:"redaction"`
+	Policy     PolicyConfig           `yaml:"policy"`
+	Agents     map[string]AgentConfig `yaml:"agents"`
+	Logging    LoggingConfig          `yaml:"logging"`
+	Retention  RetentionConfig        `yaml:"retention"`
 }
 
 // ServerConfig holds network listener addresses.
@@ -49,14 +49,14 @@ type AuditConfig struct {
 // AnalysisConfig holds analysis engine forwarding settings.
 type AnalysisConfig struct {
 	Addr                    string        `yaml:"addr"`
-	BatchSize               int           `yaml:"batch_size"`
-	FlushInterval           time.Duration `yaml:"flush_interval"`
-	CircuitBreakerThreshold int           `yaml:"circuit_breaker_threshold"`
-	CircuitBreakerCooldown  time.Duration `yaml:"circuit_breaker_cooldown"`
-	TLSEnabled              bool          `yaml:"tls_enabled"`
 	CAPath                  string        `yaml:"ca_path"`
 	CertPath                string        `yaml:"cert_path"`
 	KeyPath                 string        `yaml:"key_path"`
+	FlushInterval           time.Duration `yaml:"flush_interval"`
+	CircuitBreakerCooldown  time.Duration `yaml:"circuit_breaker_cooldown"`
+	BatchSize               int           `yaml:"batch_size"`
+	CircuitBreakerThreshold int           `yaml:"circuit_breaker_threshold"`
+	TLSEnabled              bool          `yaml:"tls_enabled"`
 }
 
 // RetentionConfig holds data retention policy settings.

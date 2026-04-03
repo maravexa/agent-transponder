@@ -2,6 +2,7 @@
 HMAC-SHA256 signing for Agent Transponder events.
 Uses only stdlib — no extra crypto dependencies.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -20,7 +21,9 @@ def _canonical_json(event: "Event") -> bytes:
     insertion order.
     """
     d = event.to_dict(include_hmac=False)
-    return json.dumps(d, sort_keys=True, separators=(",", ":"), default=str).encode("utf-8")
+    return json.dumps(d, sort_keys=True, separators=(",", ":"), default=str).encode(
+        "utf-8"
+    )
 
 
 def sign_event(event: "Event", key: bytes) -> str:

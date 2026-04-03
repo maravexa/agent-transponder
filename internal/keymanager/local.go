@@ -16,10 +16,10 @@ import (
 // It stores wrapped DEKs in a JSON file, with the KEK held in memory
 // (loaded from an environment variable or key file at startup).
 type LocalManager struct {
-	mu       sync.RWMutex
-	kek      []byte           // Key encryption key (32 bytes, AES-256)
-	deks     map[string]*DEK  // bucketID -> DEK
+	kek       []byte          // Key encryption key (32 bytes, AES-256)
+	deks      map[string]*DEK // bucketID -> DEK
 	storePath string
+	mu        sync.RWMutex
 }
 
 // LocalManagerConfig holds configuration for the local key manager.
@@ -248,8 +248,8 @@ func (m *LocalManager) unwrapKey(ciphertext []byte) ([]byte, error) {
 type storedDEK struct {
 	ID         string `json:"id"`
 	BucketID   string `json:"bucket_id"`
-	CreatedAt  int64  `json:"created_at"`
 	WrappedKey []byte `json:"wrapped_key"`
+	CreatedAt  int64  `json:"created_at"`
 }
 
 func (m *LocalManager) saveStore() error {

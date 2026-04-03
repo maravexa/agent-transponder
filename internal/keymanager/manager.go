@@ -10,8 +10,8 @@ type DEK struct {
 	ID         string // Unique key identifier
 	BucketID   string // The storage bucket this key encrypts
 	Key        []byte // The raw key material (AES-256, 32 bytes)
-	CreatedAt  int64  // Unix timestamp
 	WrappedKey []byte // The key encrypted by the KEK (for storage)
+	CreatedAt  int64  // Unix timestamp
 }
 
 // Manager handles data encryption key lifecycle.

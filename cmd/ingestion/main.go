@@ -47,6 +47,106 @@ func main() {
 	}
 }
 
+// subsystems holds all initialized infrastructure components.
+type subsystems struct {
+	idProvider identity.Provider
+	store      eventstore.Store
+	auditSink  audit.Sink
+	km         keymanager.Manager
+	policyEng  policy.Engine
+	redactor   redaction.Redactor
+	collector  *metrics.Collector
+	reg        *prometheus.Registry
+	forwarder  *AnalysisForwarder
+}
+
+// close shuts down all subsystems in reverse initialization order.
+// All fields are nil-checked, so it is safe to call even on partially initialized structs.
+func (s *subsystems) close() {
+	if s.forwarder != nil {
+		s.forwarder.Stop()
+	}
+	if s.policyEng != nil {
+		_ = s.policyEng.Close()
+	}
+	if s.km != nil {
+		_ = s.km.Close()
+	}
+	if s.auditSink != nil {
+		_ = s.auditSink.Close()
+	}
+	if s.store != nil {
+		_ = s.store.Close()
+	}
+	if s.idProvider != nil {
+		_ = s.idProvider.Close()
+	}
+}
+
+// initSubsystems initializes all infrastructure components in dependency order.
+func initSubsystems(cfg *Config, logger *slog.Logger) (*subsystems, error) {
+	s := &subsystems{}
+
+	hmacKeys := buildHMACKeyMap(cfg.Agents, logger)
+	idProvider, err := identity.NewTLSProvider(identity.TLSProviderConfig{
+		CAPath:   cfg.TLS.CAPath,
+		CertPath: cfg.TLS.CertPath,
+		KeyPath:  cfg.TLS.KeyPath,
+		HMACKeys: hmacKeys,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("init identity provider: %w", err)
+	}
+	s.idProvider = idProvider
+
+	s.store, err = eventstore.NewJSONLStore(cfg.EventStore.Path)
+	if err != nil {
+		s.close()
+		return nil, fmt.Errorf("init event store: %w", err)
+	}
+
+	s.auditSink, err = audit.NewHashChainSink(cfg.Audit.Path)
+	if err != nil {
+		s.close()
+		return nil, fmt.Errorf("init audit sink: %w", err)
+	}
+
+	kekBytes, err := buildKEK()
+	if err != nil {
+		s.close()
+		return nil, fmt.Errorf("derive kek: %w", err)
+	}
+	s.km, err = keymanager.NewLocalManager(keymanager.LocalManagerConfig{
+		KEK:       kekBytes,
+		StorePath: cfg.EventStore.Path + "/keystore.json",
+	})
+	if err != nil {
+		s.close()
+		return nil, fmt.Errorf("init key manager: %w", err)
+	}
+
+	s.policyEng, err = policy.NewConfigEngine(cfg.Policy.ConfigPath)
+	if err != nil {
+		s.close()
+		return nil, fmt.Errorf("init policy engine: %w", err)
+	}
+
+	s.redactor, err = redaction.NewRegexRedactor(buildRedactionPatterns(cfg, logger))
+	if err != nil {
+		s.close()
+		return nil, fmt.Errorf("init redactor: %w", err)
+	}
+
+	s.reg = prometheus.NewRegistry()
+	s.collector = metrics.NewCollector(s.reg)
+	s.collector.BuildInfo.WithLabelValues(version, commit, buildTime).Set(1)
+
+	s.forwarder = NewAnalysisForwarder(cfg.Analysis, logger)
+	s.forwarder.Start()
+
+	return s, nil
+}
+
 func run(configPath string) error {
 	// ── Load config ──────────────────────────────────────────────────────────
 	cfg, err := LoadConfig(configPath)
@@ -59,95 +159,35 @@ func run(configPath string) error {
 	logger.Info("starting agent-transponder ingestion",
 		"version", version, "commit", commit, "build_time", buildTime)
 
-	// ── Initialize identity provider (mTLS) ──────────────────────────────────
-	hmacKeys := buildHMACKeyMap(cfg.Agents, logger)
-	idProvider, err := identity.NewTLSProvider(identity.TLSProviderConfig{
-		CAPath:   cfg.TLS.CAPath,
-		CertPath: cfg.TLS.CertPath,
-		KeyPath:  cfg.TLS.KeyPath,
-		HMACKeys: hmacKeys,
-	})
+	// ── Initialize all subsystems ─────────────────────────────────────────────
+	subs, err := initSubsystems(cfg, logger)
 	if err != nil {
-		return fmt.Errorf("init identity provider: %w", err)
+		return err
 	}
-	defer idProvider.Close()
-
-	// ── Initialize event store ────────────────────────────────────────────────
-	store, err := eventstore.NewJSONLStore(cfg.EventStore.Path)
-	if err != nil {
-		return fmt.Errorf("init event store: %w", err)
-	}
-	defer store.Close()
-
-	// ── Initialize audit sink ─────────────────────────────────────────────────
-	auditSink, err := audit.NewHashChainSink(cfg.Audit.Path)
-	if err != nil {
-		return fmt.Errorf("init audit sink: %w", err)
-	}
-	defer auditSink.Close()
-
-	// ── Initialize key manager ────────────────────────────────────────────────
-	kekBytes, err := buildKEK()
-	if err != nil {
-		return fmt.Errorf("derive kek: %w", err)
-	}
-	km, err := keymanager.NewLocalManager(keymanager.LocalManagerConfig{
-		KEK:       kekBytes,
-		StorePath: cfg.EventStore.Path + "/keystore.json",
-	})
-	if err != nil {
-		return fmt.Errorf("init key manager: %w", err)
-	}
-	defer km.Close()
-
-	// ── Initialize policy engine ──────────────────────────────────────────────
-	policyEng, err := policy.NewConfigEngine(cfg.Policy.ConfigPath)
-	if err != nil {
-		return fmt.Errorf("init policy engine: %w", err)
-	}
-	defer policyEng.Close()
-
-	// ── Initialize redactor ───────────────────────────────────────────────────
-	redactor, err := redaction.NewRegexRedactor(buildRedactionPatterns(cfg, logger))
-	if err != nil {
-		return fmt.Errorf("init redactor: %w", err)
-	}
-
-	// ── Initialize Prometheus metrics ─────────────────────────────────────────
-	reg := prometheus.NewRegistry()
-	collector := metrics.NewCollector(reg)
-	collector.BuildInfo.WithLabelValues(version, commit, buildTime).Set(1)
-
-	// ── Initialize analysis forwarder ─────────────────────────────────────────
-	forwarder, err := NewAnalysisForwarder(cfg.Analysis, logger)
-	if err != nil {
-		return fmt.Errorf("init analysis forwarder: %w", err)
-	}
-	forwarder.Start()
-	defer forwarder.Stop()
+	defer subs.close()
 
 	// ── Build ingestion server ─────────────────────────────────────────────────
 	ingServer := &IngestionServer{
-		idProvider: idProvider,
-		store:      store,
-		auditSink:  auditSink,
-		policyEng:  policyEng,
-		redactor:   redactor,
-		forwarder:  forwarder,
-		collector:  collector,
+		idProvider: subs.idProvider,
+		store:      subs.store,
+		auditSink:  subs.auditSink,
+		policyEng:  subs.policyEng,
+		redactor:   subs.redactor,
+		forwarder:  subs.forwarder,
+		collector:  subs.collector,
 		logger:     logger,
 		version:    version,
 	}
 
 	// ── Start gRPC server ─────────────────────────────────────────────────────
-	tlsCfg, err := idProvider.TLSConfig()
+	tlsCfg, err := subs.idProvider.TLSConfig()
 	if err != nil {
 		return fmt.Errorf("get tls config: %w", err)
 	}
 
 	grpcServer := grpc.NewServer(
 		grpc.Creds(credentials.NewTLS(tlsCfg)),
-		grpc.ChainUnaryInterceptor(connectionCountInterceptor(collector)),
+		grpc.ChainUnaryInterceptor(connectionCountInterceptor(subs.collector)),
 	)
 	pb.RegisterEventIngestionServer(grpcServer, ingServer)
 
@@ -191,7 +231,7 @@ func run(configPath string) error {
 
 	// ── Start metrics HTTP server ──────────────────────────────────────────────
 	metricsMux := http.NewServeMux()
-	metricsMux.Handle("/metrics", promhttp.HandlerFor(reg, promhttp.HandlerOpts{}))
+	metricsMux.Handle("/metrics", promhttp.HandlerFor(subs.reg, promhttp.HandlerOpts{}))
 
 	metricsSrv := &http.Server{
 		Addr:         cfg.Server.MetricsAddr,
@@ -233,16 +273,6 @@ func run(configPath string) error {
 
 	_ = healthSrv.Shutdown(shutdownCtx)
 	_ = metricsSrv.Shutdown(shutdownCtx)
-
-	// Stop analysis forwarder (flush pending events).
-	forwarder.Stop()
-
-	// Close subsystems in reverse init order.
-	_ = store.Close()
-	_ = auditSink.Close()
-	_ = km.Close()
-	_ = policyEng.Close()
-	_ = idProvider.Close()
 
 	logger.Info("shutdown complete")
 	return nil

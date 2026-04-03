@@ -16,12 +16,12 @@ import (
 // It writes structured JSON entries to an append-only file with
 // SHA-256 hash chaining for tamper detection.
 type HashChainSink struct {
-	mu           sync.Mutex
 	file         *os.File
 	writer       *bufio.Writer
-	seq          int64
 	previousHash string
 	path         string
+	mu           sync.Mutex
+	seq          int64
 }
 
 const genesisHash = "0000000000000000000000000000000000000000000000000000000000000000"
@@ -71,18 +71,18 @@ func (s *HashChainSink) Log(ctx context.Context, entry Entry) error {
 		return fmt.Errorf("marshal audit entry: %w", err)
 	}
 
-	if _, err := s.writer.Write(data); err != nil {
+	if _, err = s.writer.Write(data); err != nil {
 		return fmt.Errorf("write audit entry: %w", err)
 	}
-	if err := s.writer.WriteByte('\n'); err != nil {
+	if err = s.writer.WriteByte('\n'); err != nil {
 		return fmt.Errorf("write newline: %w", err)
 	}
 
 	// Audit entries are flushed and synced immediately — no buffering risk.
-	if err := s.writer.Flush(); err != nil {
+	if err = s.writer.Flush(); err != nil {
 		return fmt.Errorf("flush: %w", err)
 	}
-	if err := s.file.Sync(); err != nil {
+	if err = s.file.Sync(); err != nil {
 		return fmt.Errorf("fsync: %w", err)
 	}
 

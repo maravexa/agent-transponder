@@ -1,6 +1,7 @@
 """
 Unit tests for agent_transponder.hmac — no gRPC required.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -39,6 +40,7 @@ def _make_prompt_event(**kwargs) -> Event:
 # ---------------------------------------------------------------------------
 # sign_event tests
 # ---------------------------------------------------------------------------
+
 
 def test_sign_event_sets_hmac_field():
     event = _make_prompt_event()
@@ -115,6 +117,7 @@ def test_sign_event_overwrites_previous_hmac():
 # verify_event tests
 # ---------------------------------------------------------------------------
 
+
 def test_verify_event_valid():
     event = _make_prompt_event()
     sign_event(event, KEY_A)
@@ -158,6 +161,7 @@ def test_verify_event_returns_bool():
 # ---------------------------------------------------------------------------
 # _canonical_json tests
 # ---------------------------------------------------------------------------
+
 
 def test_canonical_json_excludes_hmac():
     event = _make_prompt_event()
@@ -209,6 +213,7 @@ def test_canonical_json_contains_required_fields():
 # Cross-check: manual HMAC matches sign_event output
 # ---------------------------------------------------------------------------
 
+
 def test_sign_event_matches_manual_hmac():
     event = _make_prompt_event()
     payload = _canonical_json(event)
@@ -220,6 +225,7 @@ def test_sign_event_matches_manual_hmac():
 # ---------------------------------------------------------------------------
 # Edge cases
 # ---------------------------------------------------------------------------
+
 
 def test_sign_event_empty_key():
     """Empty key is allowed by stdlib hmac — just shouldn't raise."""

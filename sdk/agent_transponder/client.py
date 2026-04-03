@@ -4,6 +4,7 @@ gRPC client for the Agent Transponder ingestion API.
 gRPC imports are lazy so this module can be imported in environments where
 grpcio is not installed (e.g. during unit tests that don't touch transport).
 """
+
 from __future__ import annotations
 
 import logging
@@ -47,8 +48,7 @@ class GrpcTransport:
             import grpc  # type: ignore[import]
         except ImportError as exc:
             raise RuntimeError(
-                "grpcio is not installed. "
-                "Install it with: pip install grpcio"
+                "grpcio is not installed. Install it with: pip install grpcio"
             ) from exc
 
         cfg = self._cfg
@@ -83,6 +83,7 @@ class GrpcTransport:
         # that uses the low-level gRPC API.
         try:
             from agenttransponder.v1 import events_pb2_grpc  # type: ignore[import]
+
             self._stub = events_pb2_grpc.EventIngestionStub(channel)
             self._use_generated_stub = True
         except ImportError:
@@ -100,6 +101,7 @@ class GrpcTransport:
             return False
         try:
             from agenttransponder.v1 import events_pb2  # type: ignore[import]
+
             self._stub.Ping(events_pb2.PingRequest(), timeout=5)
             return True
         except Exception as exc:  # noqa: BLE001
@@ -114,6 +116,7 @@ class GrpcTransport:
             return False
         try:
             from agenttransponder.v1 import events_pb2  # type: ignore[import]
+
             proto_event = _event_to_proto(event, events_pb2)
             resp = self._stub.IngestEvent(
                 events_pb2.IngestEventRequest(event=proto_event),
@@ -122,7 +125,9 @@ class GrpcTransport:
             if not resp.accepted:
                 logger.warning(
                     "Event %s rejected: %s (%s)",
-                    event.id, resp.error, resp.rejection_reason,
+                    event.id,
+                    resp.error,
+                    resp.rejection_reason,
                 )
                 return False
             return True
@@ -217,6 +222,7 @@ def _event_to_proto(event: Event, pb2: object) -> object:
 # Background sender with retry / backoff
 # ---------------------------------------------------------------------------
 
+
 class EventSender:
     """Drains the shared event queue and delivers events to the gRPC transport.
 
@@ -224,12 +230,14 @@ class EventSender:
     """
 
     # gRPC status codes that are worth retrying
-    _RETRYABLE_CODES = frozenset([
-        "UNAVAILABLE",
-        "RESOURCE_EXHAUSTED",
-        "DEADLINE_EXCEEDED",
-        "INTERNAL",
-    ])
+    _RETRYABLE_CODES = frozenset(
+        [
+            "UNAVAILABLE",
+            "RESOURCE_EXHAUSTED",
+            "DEADLINE_EXCEEDED",
+            "INTERNAL",
+        ]
+    )
 
     def __init__(self, cfg: TransponderConfig, event_queue: queue.Queue) -> None:
         self._cfg = cfg
@@ -289,9 +297,12 @@ class EventSender:
                     "Dropping event %s after %d attempts", event.id, attempt + 1
                 )
                 return
-            sleep_time = min(delay * (2 ** attempt), cfg.retry_max_delay_sec)
+            sleep_time = min(delay * (2**attempt), cfg.retry_max_delay_sec)
             logger.debug(
                 "Retry %d/%d for event %s in %.2fs",
-                attempt + 1, cfg.max_retries, event.id, sleep_time,
+                attempt + 1,
+                cfg.max_retries,
+                event.id,
+                sleep_time,
             )
             time.sleep(sleep_time)
