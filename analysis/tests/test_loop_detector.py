@@ -8,11 +8,9 @@ from __future__ import annotations
 
 import time
 
-import pytest
-
 from flight_recorder_analysis.config import LoopDetectorConfig
 from flight_recorder_analysis.detectors.loop_detector import LoopDetector
-from flight_recorder_analysis.models import Detection, DetectionType, Event
+from flight_recorder_analysis.models import DetectionType, Event
 
 
 # ---------------------------------------------------------------------------

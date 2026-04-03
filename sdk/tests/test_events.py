@@ -5,9 +5,7 @@ from __future__ import annotations
 
 import re
 import time
-from datetime import datetime, timezone
-
-import pytest
+from datetime import datetime
 
 from agent_transponder.events import (
     ErrorData,

@@ -23,7 +23,6 @@ No numpy / scipy — pure Python stdlib only.
 from __future__ import annotations
 
 import re
-from typing import Sequence
 
 from flight_recorder_analysis.config import DriftDetectorConfig
 from flight_recorder_analysis.detectors.base import BaseDetector

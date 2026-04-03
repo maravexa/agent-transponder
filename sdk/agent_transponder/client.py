@@ -10,11 +10,10 @@ import logging
 import queue
 import threading
 import time
-from typing import List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from .config import TransponderConfig
 from .events import Event
-from .hmac import sign_event
 
 if TYPE_CHECKING:
     pass  # grpc types only used at runtime
