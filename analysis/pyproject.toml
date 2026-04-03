@@ -7,6 +7,28 @@ name = "agent-transponder-analysis"
 version = "0.1.0"
 description = "Agent Transponder Analysis Engine"
 requires-python = ">=3.12"
+# grpcio is optional at import time — only needed when running the server.
+dependencies = []
 
 [project.optional-dependencies]
+grpc = [
+    "grpcio>=1.65.0",
+    "grpcio-tools>=1.65.0",
+]
 test = ["pytest>=8"]
+dev = [
+    "pytest>=8",
+    "grpcio>=1.65.0",
+    "grpcio-tools>=1.65.0",
+]
+
+[project.scripts]
+at-analysis = "flight_recorder_analysis.server:serve"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["flight_recorder_analysis*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v"

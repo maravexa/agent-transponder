@@ -1,0 +1,46 @@
+server:
+  listen_addr: ":8443"
+  health_addr: ":8081"
+  metrics_addr: ":9090"
+
+tls:
+  ca_path: "/etc/at/certs/ca.pem"
+  cert_path: "/etc/at/certs/server.pem"
+  key_path: "/etc/at/certs/server-key.pem"
+
+event_store:
+  path: "/data/events"
+
+audit:
+  path: "/data/audit/audit.jsonl"
+
+analysis:
+  addr: "analysis:50051"
+  batch_size: 50
+  flush_interval: "5s"
+  circuit_breaker_threshold: 5
+  circuit_breaker_cooldown: "30s"
+  tls_enabled: true
+  ca_path: "/etc/at/certs/ca.pem"
+  cert_path: "/etc/at/certs/ingestion.pem"
+  key_path: "/etc/at/certs/ingestion-key.pem"
+
+retention:
+  default_ttl: "72h"
+  check_interval: "1h"
+
+redaction:
+  # Additional patterns beyond the built-in defaults
+  custom_patterns: []
+
+policy:
+  config_path: "/etc/at/policy.yaml"
+
+# Per-agent HMAC keys (in production, load from a secrets manager)
+agents:
+  at-sdk-agent:
+    hmac_key: "base64-encoded-key-here"
+
+logging:
+  format: "json"  # "json" or "text"
+  level: "info"

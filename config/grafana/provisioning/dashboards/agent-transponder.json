@@ -1,0 +1,197 @@
+{
+  "__inputs": [],
+  "__requires": [
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "10.0.0"
+    },
+    {
+      "type": "datasource",
+      "id": "prometheus",
+      "name": "Prometheus",
+      "version": "1.0.0"
+    }
+  ],
+  "annotations": {
+    "list": []
+  },
+  "description": "Agent Transponder — Ingestion & Analysis Overview",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "short" },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 0 },
+      "id": 1,
+      "options": { "legend": { "calcs": ["lastNotNull"], "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "single" } },
+      "targets": [
+        {
+          "expr": "sum(rate(agent_transponder_events_ingested_total[5m])) by (event_type)",
+          "legendFormat": "{{event_type}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Events Ingested (rate/5m)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "short" },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 0 },
+      "id": 2,
+      "options": { "legend": { "calcs": ["lastNotNull"], "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "single" } },
+      "targets": [
+        {
+          "expr": "sum(rate(agent_transponder_events_rejected_total[5m])) by (reason)",
+          "legendFormat": "{{reason}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Events Rejected (rate/5m)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" }, "unit": "short" },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 0 },
+      "id": 3,
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "textMode": "auto" },
+      "targets": [
+        {
+          "expr": "agent_transponder_active_connections",
+          "legendFormat": "Connections",
+          "refId": "A"
+        }
+      ],
+      "title": "Active Connections",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "s" },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "id": 4,
+      "options": { "legend": { "calcs": ["mean", "p95"], "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "single" } },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(agent_transponder_ingest_duration_seconds_bucket[5m])) by (le, tenant_id))",
+          "legendFormat": "p95 {{tenant_id}}",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(agent_transponder_ingest_duration_seconds_bucket[5m])) by (le, tenant_id))",
+          "legendFormat": "p50 {{tenant_id}}",
+          "refId": "B"
+        }
+      ],
+      "title": "Ingest Latency (p50/p95)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "short" },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "id": 5,
+      "options": { "legend": { "calcs": ["lastNotNull"], "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "single" } },
+      "targets": [
+        {
+          "expr": "sum(rate(agent_transponder_detections_total[5m])) by (detection_type, severity)",
+          "legendFormat": "{{detection_type}} / {{severity}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Detections (rate/5m)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" }, "unit": "bytes" },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 16 },
+      "id": 6,
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "textMode": "auto" },
+      "targets": [
+        {
+          "expr": "sum(agent_transponder_storage_bytes) by (tenant_id)",
+          "legendFormat": "{{tenant_id}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Storage Used",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" }, "unit": "short",
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": 1 }, { "color": "red", "value": 0 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 16 },
+      "id": 7,
+      "options": { "colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "textMode": "auto" },
+      "targets": [
+        {
+          "expr": "agent_transponder_audit_verify_result",
+          "legendFormat": "Chain Intact",
+          "refId": "A"
+        }
+      ],
+      "title": "Audit Chain Integrity",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" }, "unit": "short" },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 16 },
+      "id": 8,
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "textMode": "auto" },
+      "targets": [
+        {
+          "expr": "agent_transponder_audit_chain_length",
+          "legendFormat": "Entries",
+          "refId": "A"
+        }
+      ],
+      "title": "Audit Log Entries",
+      "type": "stat"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "tags": ["agent-transponder"],
+  "templating": { "list": [] },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Agent Transponder",
+  "uid": "agent-transponder-overview",
+  "version": 1
+}

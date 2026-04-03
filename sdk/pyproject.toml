@@ -7,6 +7,17 @@ name = "agent-transponder-sdk"
 version = "0.1.0"
 description = "Agent Transponder Python SDK"
 requires-python = ">=3.12"
+dependencies = [
+    "grpcio>=1.65.0",
+    "grpcio-tools>=1.65.0",
+]
 
 [project.optional-dependencies]
 test = ["pytest>=8"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["agent_transponder*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

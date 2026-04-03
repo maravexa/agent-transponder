@@ -7,7 +7,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/agent-transponder/agent-transponder/internal/identity"
 	"gopkg.in/yaml.v3"
 )
 
