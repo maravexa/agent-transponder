@@ -85,9 +85,7 @@ class DriftDetector(BaseDetector):
         if not events:
             return []
 
-        prompt_events = [
-            e for e in events if e.type == "prompt" and e.prompt
-        ]
+        prompt_events = [e for e in events if e.type == "prompt" and e.prompt]
         if len(prompt_events) < self._cfg.min_prompts:
             return []
 
@@ -119,11 +117,7 @@ class DriftDetector(BaseDetector):
         total_subsequent = len(prompt_events) - 1
         drift_fraction = len(drifted) / total_subsequent if total_subsequent else 0.0
 
-        severity = (
-            Severity.ERROR
-            if drift_fraction >= 0.8
-            else Severity.WARNING
-        )
+        severity = Severity.ERROR if drift_fraction >= 0.8 else Severity.WARNING
 
         return [
             Detection(

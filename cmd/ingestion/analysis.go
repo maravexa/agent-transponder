@@ -30,26 +30,24 @@ const (
 // AnalysisForwarder buffers events and forwards them to the analysis engine
 // in batches. All submit calls are non-blocking.
 type AnalysisForwarder struct {
-	cfg    AnalysisConfig
-	logger *slog.Logger
-
-	conn   *grpc.ClientConn
-	client pb.AnalysisServiceClient
-
+	cfg     AnalysisConfig
+	logger  *slog.Logger
+	conn    *grpc.ClientConn
+	client  pb.AnalysisServiceClient
 	eventCh chan *types.Event
+	cancel  context.CancelFunc
 
-	mu        sync.Mutex
-	circuit   circuitState
-	failures  int
 	openUntil time.Time
 
-	wg     sync.WaitGroup
-	cancel context.CancelFunc
+	wg       sync.WaitGroup
+	mu       sync.Mutex
+	circuit  circuitState
+	failures int
 }
 
 // NewAnalysisForwarder creates a forwarder. Connection failures at startup are
 // logged as warnings — the forwarder will retry on the first flush.
-func NewAnalysisForwarder(cfg AnalysisConfig, logger *slog.Logger) (*AnalysisForwarder, error) {
+func NewAnalysisForwarder(cfg AnalysisConfig, logger *slog.Logger) *AnalysisForwarder {
 	f := &AnalysisForwarder{
 		cfg:     cfg,
 		logger:  logger,
@@ -61,7 +59,7 @@ func NewAnalysisForwarder(cfg AnalysisConfig, logger *slog.Logger) (*AnalysisFor
 			"addr", cfg.Addr, "err", err)
 	}
 
-	return f, nil
+	return f
 }
 
 // dial establishes the gRPC connection to the analysis engine.
@@ -146,18 +144,23 @@ func (f *AnalysisForwarder) runBatcher(ctx context.Context) {
 			}
 
 		case <-ctx.Done():
-			// Drain whatever remains in the channel before exiting.
-			for {
-				select {
-				case event := <-f.eventCh:
-					batch = append(batch, event)
-				default:
-					if len(batch) > 0 {
-						f.flush(batch)
-					}
-					return
-				}
+			f.drainAndFlush(batch)
+			return
+		}
+	}
+}
+
+// drainAndFlush empties any buffered events and sends the final batch on shutdown.
+func (f *AnalysisForwarder) drainAndFlush(batch []*types.Event) {
+	for {
+		select {
+		case event := <-f.eventCh:
+			batch = append(batch, event)
+		default:
+			if len(batch) > 0 {
+				f.flush(batch)
 			}
+			return
 		}
 	}
 }
@@ -287,14 +290,14 @@ func eventToProto(e *types.Event) *pb.Event {
 		proto.Prompt = &pb.PromptData{
 			Content:    e.Prompt.Content,
 			Role:       e.Prompt.Role,
-			TokenCount: int32(e.Prompt.TokenCount),
+			TokenCount: safeInt32(e.Prompt.TokenCount),
 		}
 	}
 	if e.Response != nil {
 		proto.Response = &pb.ResponseData{
 			Content:      e.Response.Content,
 			FinishReason: e.Response.FinishReason,
-			TokenCount:   int32(e.Response.TokenCount),
+			TokenCount:   safeInt32(e.Response.TokenCount),
 		}
 	}
 	if e.ToolCall != nil {
@@ -302,7 +305,7 @@ func eventToProto(e *types.Event) *pb.Event {
 			ToolName:   e.ToolCall.ToolName,
 			Success:    e.ToolCall.Success,
 			ErrorMsg:   e.ToolCall.ErrorMsg,
-			RetryCount: int32(e.ToolCall.RetryCount),
+			RetryCount: safeInt32(e.ToolCall.RetryCount),
 		}
 		if e.ToolCall.Arguments != nil {
 			if s, err := jsonToStruct(e.ToolCall.Arguments); err == nil {
@@ -325,7 +328,7 @@ func eventToProto(e *types.Event) *pb.Event {
 	}
 	if e.Reasoning != nil {
 		proto.Reasoning = &pb.ReasoningData{
-			Step:    int32(e.Reasoning.Step),
+			Step:    safeInt32(e.Reasoning.Step),
 			Content: e.Reasoning.Content,
 		}
 	}
@@ -339,9 +342,9 @@ func eventToProto(e *types.Event) *pb.Event {
 	}
 	if e.TokenUsage != nil {
 		proto.TokenUsage = &pb.TokenUsage{
-			PromptTokens:     int32(e.TokenUsage.PromptTokens),
-			CompletionTokens: int32(e.TokenUsage.CompletionTokens),
-			TotalTokens:      int32(e.TokenUsage.TotalTokens),
+			PromptTokens:     safeInt32(e.TokenUsage.PromptTokens),
+			CompletionTokens: safeInt32(e.TokenUsage.CompletionTokens),
+			TotalTokens:      safeInt32(e.TokenUsage.TotalTokens),
 		}
 	}
 
@@ -533,4 +536,16 @@ func structToJSON(s *structpb.Struct) (json.RawMessage, error) {
 		return nil, err
 	}
 	return json.RawMessage(b), nil
+}
+
+// safeInt32 converts an int to int32, clamping to avoid overflow.
+func safeInt32(n int) int32 {
+	const maxInt32 = 1<<31 - 1
+	if n > maxInt32 {
+		return maxInt32
+	}
+	if n < -1<<31 {
+		return -1 << 31
+	}
+	return int32(n) //nolint:gosec
 }

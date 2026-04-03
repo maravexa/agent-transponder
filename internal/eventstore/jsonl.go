@@ -19,9 +19,9 @@ import (
 // bucketed by date for retention management.
 type JSONLStore struct {
 	basePath string
-	mu       sync.Mutex
 	writers  map[string]*bufio.Writer
 	files    map[string]*os.File
+	mu       sync.Mutex
 }
 
 // NewJSONLStore creates a new JSONL-backed event store.
@@ -102,41 +102,44 @@ func (s *JSONLStore) Query(ctx context.Context, filter QueryFilter) ([]*types.Ev
 // Stream returns a channel that tails the event store for new events.
 func (s *JSONLStore) Stream(ctx context.Context, filter QueryFilter) (<-chan *types.Event, error) {
 	ch := make(chan *types.Event, 128)
-
 	go func() {
 		defer close(ch)
-		// Simple polling implementation for 0.1.0.
-		// In 1.0.0 this becomes a Kafka consumer.
-		ticker := time.NewTicker(500 * time.Millisecond)
-		defer ticker.Stop()
+		s.pollEvents(ctx, filter, ch)
+	}()
+	return ch, nil
+}
 
-		var lastSeen time.Time
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-ticker.C:
-				f := filter
-				if !lastSeen.IsZero() {
-					f.After = lastSeen
-				}
-				events, err := s.Query(ctx, f)
-				if err != nil {
-					continue
-				}
-				for _, e := range events {
-					select {
-					case ch <- e:
-						lastSeen = e.Timestamp
-					case <-ctx.Done():
-						return
-					}
+// pollEvents is the polling loop for Stream. Separated to keep Stream's cognitive complexity low.
+func (s *JSONLStore) pollEvents(ctx context.Context, filter QueryFilter, ch chan<- *types.Event) {
+	// Simple polling implementation for 0.1.0.
+	// In 1.0.0 this becomes a Kafka consumer.
+	ticker := time.NewTicker(500 * time.Millisecond)
+	defer ticker.Stop()
+
+	var lastSeen time.Time
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			f := filter
+			if !lastSeen.IsZero() {
+				f.After = lastSeen
+			}
+			events, err := s.Query(ctx, f)
+			if err != nil {
+				continue
+			}
+			for _, e := range events {
+				select {
+				case ch <- e:
+					lastSeen = e.Timestamp
+				case <-ctx.Done():
+					return
 				}
 			}
 		}
-	}()
-
-	return ch, nil
+	}
 }
 
 // Close flushes and closes all open files.

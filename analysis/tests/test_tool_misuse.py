@@ -104,7 +104,8 @@ class TestToolMisuseDetector:
         detections = self.detector.detect(events)
         # We only care that the retry-storm detection does NOT fire (count == 0 for that).
         retry_storm_dets = [
-            d for d in detections
+            d
+            for d in detections
             if "5 times" in d.message or "retry" in d.evidence.lower()
         ]
         # Retry storm requires > max_retries failures, so 5 should NOT trigger it.
@@ -112,7 +113,9 @@ class TestToolMisuseDetector:
 
     def test_no_detection_below_max_retries(self) -> None:
         """Only 4 failures with same args (< max_retries=5) and failure rate at threshold."""
-        cfg = ToolMisuseConfig(max_retries=5, min_failure_rate=0.7, min_calls_for_rate=10)
+        cfg = ToolMisuseConfig(
+            max_retries=5, min_failure_rate=0.7, min_calls_for_rate=10
+        )
         detector = ToolMisuseDetector(cfg)
         events = _failing_calls("search", count=4)
         detections = detector.detect(events)
@@ -127,9 +130,7 @@ class TestToolMisuseDetector:
             _tool_event(f"ok-{i}", "search", success=True, ts=float(i))
             for i in range(9)
         ]
-        events.append(
-            _tool_event("fail-0", "search", success=False, ts=9.0)
-        )
+        events.append(_tool_event("fail-0", "search", success=False, ts=9.0))
         detections = self.detector.detect(events)
         assert detections == []
 
@@ -147,7 +148,9 @@ class TestToolMisuseDetector:
     def test_detects_high_failure_rate_varied_args(self) -> None:
         """Same tool called 5 times with varying args, 4 of which fail (80% rate)."""
         events = [
-            _tool_event(f"e-{i}", "api_call", arguments={"id": i}, success=(i == 0), ts=float(i))
+            _tool_event(
+                f"e-{i}", "api_call", arguments={"id": i}, success=(i == 0), ts=float(i)
+            )
             for i in range(5)
         ]
         detections = self.detector.detect(events)

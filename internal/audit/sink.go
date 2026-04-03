@@ -12,16 +12,16 @@ import (
 type ActionType string
 
 const (
-	ActionAuthenticate   ActionType = "authenticate"
-	ActionIngestEvent    ActionType = "ingest_event"
-	ActionQueryEvents    ActionType = "query_events"
-	ActionAnalyze        ActionType = "analyze"
-	ActionConfigChange   ActionType = "config_change"
-	ActionDeleteData     ActionType = "delete_data"
-	ActionExportData     ActionType = "export_data"
-	ActionKeyRotation    ActionType = "key_rotation"
-	ActionCertIssue      ActionType = "cert_issue"
-	ActionAccessDenied   ActionType = "access_denied"
+	ActionAuthenticate ActionType = "authenticate"
+	ActionIngestEvent  ActionType = "ingest_event"
+	ActionQueryEvents  ActionType = "query_events"
+	ActionAnalyze      ActionType = "analyze"
+	ActionConfigChange ActionType = "config_change"
+	ActionDeleteData   ActionType = "delete_data"
+	ActionExportData   ActionType = "export_data"
+	ActionKeyRotation  ActionType = "key_rotation"
+	ActionCertIssue    ActionType = "cert_issue"
+	ActionAccessDenied ActionType = "access_denied"
 )
 
 // Outcome indicates whether the audited action succeeded.
@@ -38,17 +38,17 @@ type Entry struct {
 	Timestamp     time.Time         `json:"timestamp"`
 	Action        ActionType        `json:"action"`
 	Outcome       Outcome           `json:"outcome"`
-	ActorID       string            `json:"actor_id"`        // Cert SAN, API key fingerprint, or system identity
-	Resource      string            `json:"resource"`        // What was acted upon
+	ActorID       string            `json:"actor_id"` // Cert SAN, API key fingerprint, or system identity
+	Resource      string            `json:"resource"` // What was acted upon
 	Detail        string            `json:"detail,omitempty"`
 	SourceIP      string            `json:"source_ip,omitempty"`
-	CorrelationID string            `json:"correlation_id"`  // Ties to request chain
+	CorrelationID string            `json:"correlation_id"` // Ties to request chain
 	Labels        map[string]string `json:"labels,omitempty"`
 
 	// Integrity — set by the Sink implementation
-	SequenceNum   int64  `json:"seq"`            // Monotonic counter
-	PreviousHash  string `json:"previous_hash"`  // Hash chain link
-	EntryHash     string `json:"entry_hash"`     // Hash of this entry
+	PreviousHash string `json:"previous_hash"` // Hash chain link
+	EntryHash    string `json:"entry_hash"`    // Hash of this entry
+	SequenceNum  int64  `json:"seq"`           // Monotonic counter
 }
 
 // Sink is the core audit logging interface.
@@ -80,11 +80,11 @@ type Querier interface {
 
 // AuditFilter defines search criteria for audit entries.
 type AuditFilter struct {
-	ActorID    string
-	Actions    []ActionType
-	Outcomes   []Outcome
-	After      time.Time
-	Before     time.Time
-	Resource   string
-	Limit      int
+	ActorID  string
+	Actions  []ActionType
+	Outcomes []Outcome
+	After    time.Time
+	Before   time.Time
+	Resource string
+	Limit    int
 }

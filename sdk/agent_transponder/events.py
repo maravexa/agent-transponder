@@ -2,6 +2,7 @@
 Event dataclasses matching the proto/agenttransponder/v1/events.proto schema.
 No proto imports — these are plain Python dataclasses.
 """
+
 from __future__ import annotations
 
 import time
@@ -15,6 +16,7 @@ from typing import Any, Dict, Optional
 # ---------------------------------------------------------------------------
 # UUIDv7 — time-ordered, stdlib only
 # ---------------------------------------------------------------------------
+
 
 def uuid7() -> str:
     """Generate a UUIDv7 (time-ordered) identifier using only stdlib."""
@@ -38,6 +40,7 @@ def uuid7() -> str:
 # ---------------------------------------------------------------------------
 # Enums
 # ---------------------------------------------------------------------------
+
 
 class EventType(IntEnum):
     UNSPECIFIED = 0
@@ -65,6 +68,7 @@ class Severity(IntEnum):
 # ---------------------------------------------------------------------------
 # Payload dataclasses
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class PromptData:
@@ -121,6 +125,7 @@ class TokenUsage:
 # ---------------------------------------------------------------------------
 # Canonical Event
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class Event:

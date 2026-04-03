@@ -23,6 +23,7 @@ Usage::
         )
         session.record_error("timeout", message="API call timed out", retryable=True)
 """
+
 from __future__ import annotations
 
 import logging
@@ -56,13 +57,16 @@ logger = logging.getLogger(__name__)
 # Session — groups related events and submits them to the Transponder queue
 # ---------------------------------------------------------------------------
 
+
 class Session:
     """Context manager that groups events under a shared session ID.
 
     Obtain via :py:meth:`Transponder.session`.
     """
 
-    def __init__(self, transponder: "Transponder", session_id: Optional[str] = None) -> None:
+    def __init__(
+        self, transponder: "Transponder", session_id: Optional[str] = None
+    ) -> None:
         self._tp = transponder
         self._session_id = session_id or uuid7()
 
@@ -247,6 +251,7 @@ class Session:
 # Transponder — main entry point
 # ---------------------------------------------------------------------------
 
+
 class Transponder:
     """Agent Transponder SDK client.
 
@@ -296,6 +301,7 @@ class Transponder:
         """Start the background sender thread (lazy import to avoid grpc dep in tests)."""
         try:
             from .client import EventSender
+
             self._sender = EventSender(self._cfg, self._queue)
             self._sender.start()
         except Exception as exc:  # noqa: BLE001
@@ -328,6 +334,7 @@ class Transponder:
                 if remaining <= 0:
                     break
                 import time
+
                 time.sleep(0.05)
         except Exception:  # noqa: BLE001
             pass

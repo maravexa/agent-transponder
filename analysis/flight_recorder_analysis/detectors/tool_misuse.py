@@ -86,7 +86,9 @@ class ToolMisuseDetector(BaseDetector):
         # 1. Per-(tool_name, canonical_args) retry storm analysis
         # ------------------------------------------------------------------
         # key → list of (event_id, success, retry_count)
-        call_groups: dict[tuple[str, str], list[tuple[str, bool, int]]] = defaultdict(list)
+        call_groups: dict[tuple[str, str], list[tuple[str, bool, int]]] = defaultdict(
+            list
+        )
 
         for e in tool_events:
             tc = e.tool_call  # type: ignore[union-attr]
@@ -100,7 +102,9 @@ class ToolMisuseDetector(BaseDetector):
             failures = [(eid, rc) for eid, ok, rc in calls if not ok]
             if len(failures) > self._cfg.max_retries:
                 max_rc = max(rc for _, rc in failures)
-                confidence = min(0.6 + (len(failures) - self._cfg.max_retries) * 0.05, 1.0)
+                confidence = min(
+                    0.6 + (len(failures) - self._cfg.max_retries) * 0.05, 1.0
+                )
                 detections.append(
                     Detection(
                         type=DetectionType.TOOL_MISUSE,

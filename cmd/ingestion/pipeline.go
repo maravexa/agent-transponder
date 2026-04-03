@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"crypto/x509"
 	"fmt"
 	"log/slog"
 	"net"
@@ -124,7 +123,7 @@ func (s *IngestionServer) IngestEvent(ctx context.Context, req *pb.IngestEventRe
 
 	// ── 3. Convert proto event → internal type ─────────────────────────────
 	event := protoToEvent(req.GetEvent())
-	event.AgentID = agentID   // Enforce identity from cert, not payload
+	event.AgentID = agentID // Enforce identity from cert, not payload
 	event.TenantID = tenantID
 
 	// ── 4. Verify HMAC integrity ────────────────────────────────────────────
@@ -328,15 +327,4 @@ func (s *IngestionServer) logAudit(
 	return err
 }
 
-// peerCerts extracts the peer certificates from a context (used in tests).
-func peerCerts(ctx context.Context) []*x509.Certificate {
-	p, ok := peer.FromContext(ctx)
-	if !ok {
-		return nil
-	}
-	tlsInfo, ok := p.AuthInfo.(credentials.TLSInfo)
-	if !ok {
-		return nil
-	}
-	return tlsInfo.State.PeerCertificates
-}
+

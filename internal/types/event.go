@@ -53,9 +53,8 @@ type Event struct {
 	Severity Severity  `json:"severity"`
 
 	// Timing
-	Timestamp  time.Time     `json:"timestamp"`            // When the event occurred at the agent
-	ReceivedAt time.Time     `json:"received_at,omitempty"` // When ingestion received it
-	Duration   time.Duration `json:"duration,omitempty"`    // For tool calls, response generation, etc.
+	Timestamp  time.Time `json:"timestamp"`             // When the event occurred at the agent
+	ReceivedAt time.Time `json:"received_at,omitempty"` // When ingestion received it
 
 	// Content — only one of these is populated per event type
 	Prompt    *PromptData    `json:"prompt,omitempty"`
@@ -75,6 +74,9 @@ type Event struct {
 
 	// Redaction tracking — set by ingestion after redaction
 	RedactedFields []string `json:"redacted_fields,omitempty"`
+
+	// Duration is set for timed events (tool calls, response generation, etc.)
+	Duration time.Duration `json:"duration,omitempty"`
 }
 
 // PromptData captures the input sent to a model.
@@ -94,11 +96,11 @@ type ResponseData struct {
 // ToolCallData captures a tool invocation and its result.
 type ToolCallData struct {
 	ToolName   string          `json:"tool_name"`
-	Arguments  json.RawMessage `json:"arguments,omitempty"`  // Preserved as raw JSON
-	Result     json.RawMessage `json:"result,omitempty"`     // Preserved as raw JSON
-	Success    bool            `json:"success"`
+	Arguments  json.RawMessage `json:"arguments,omitempty"` // Preserved as raw JSON
+	Result     json.RawMessage `json:"result,omitempty"`    // Preserved as raw JSON
 	ErrorMsg   string          `json:"error_msg,omitempty"`
 	RetryCount int             `json:"retry_count,omitempty"`
+	Success    bool            `json:"success"`
 }
 
 // MemoryData captures agent memory operations.
@@ -110,8 +112,8 @@ type MemoryData struct {
 
 // ReasoningData captures chain-of-thought or reasoning traces.
 type ReasoningData struct {
-	Step    int    `json:"step"`
 	Content string `json:"content"`
+	Step    int    `json:"step"`
 }
 
 // ErrorData captures error details.
@@ -144,12 +146,12 @@ type AnalysisResult struct {
 type DetectionType string
 
 const (
-	DetectionLoop          DetectionType = "task_loop"
-	DetectionToolMisuse    DetectionType = "tool_misuse"
-	DetectionGoalDrift     DetectionType = "goal_drift"
-	DetectionHallucination DetectionType = "hallucination"
-	DetectionFailureCascade DetectionType = "failure_cascade"
-	DetectionRewardHacking DetectionType = "reward_hacking"
+	DetectionLoop             DetectionType = "task_loop"
+	DetectionToolMisuse       DetectionType = "tool_misuse"
+	DetectionGoalDrift        DetectionType = "goal_drift"
+	DetectionHallucination    DetectionType = "hallucination"
+	DetectionFailureCascade   DetectionType = "failure_cascade"
+	DetectionRewardHacking    DetectionType = "reward_hacking"
 	DetectionPersonalityDrift DetectionType = "personality_drift"
 )
 
@@ -157,10 +159,10 @@ const (
 type Detection struct {
 	Type       DetectionType `json:"type"`
 	Severity   Severity      `json:"severity"`
-	Confidence float64       `json:"confidence"` // 0.0–1.0
 	Message    string        `json:"message"`
-	EventIDs   []string      `json:"event_ids"`   // Events that triggered this detection
+	EventIDs   []string      `json:"event_ids"` // Events that triggered this detection
 	Evidence   string        `json:"evidence,omitempty"`
+	Confidence float64       `json:"confidence"` // 0.0–1.0
 }
 
 // ComputeHMAC calculates the HMAC-SHA256 for this event.

@@ -13,10 +13,10 @@ import (
 // ConfigEngine is the 0.1.0 PolicyEngine implementation.
 // It loads rules from a YAML config file and enforces token-bucket rate limiting.
 type ConfigEngine struct {
-	mu         sync.RWMutex
 	configPath string
 	rules      PolicyRules
 	buckets    map[string]*tokenBucket // agentID -> bucket
+	mu         sync.RWMutex
 }
 
 // PolicyRules is the YAML-serializable policy configuration.
@@ -148,11 +148,11 @@ func (e *ConfigEngine) getBucket(agentID string) *tokenBucket {
 
 // tokenBucket implements a simple token bucket rate limiter.
 type tokenBucket struct {
+	lastFill time.Time
 	mu       sync.Mutex
 	tokens   float64
 	max      float64
 	rate     float64 // tokens per second
-	lastFill time.Time
 }
 
 func newTokenBucket(rate float64, burst int) *tokenBucket {

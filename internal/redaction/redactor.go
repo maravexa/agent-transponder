@@ -83,46 +83,21 @@ func NewRegexRedactor(patterns []Pattern) (*RegexRedactor, error) {
 func (r *RegexRedactor) Redact(event *types.Event) []string {
 	var redacted []string
 
-	if event.Prompt != nil {
-		if r.scrub(&event.Prompt.Content) {
-			redacted = append(redacted, "prompt.content")
-		}
+	if event.Prompt != nil && r.scrub(&event.Prompt.Content) {
+		redacted = append(redacted, "prompt.content")
 	}
-
-	if event.Response != nil {
-		if r.scrub(&event.Response.Content) {
-			redacted = append(redacted, "response.content")
-		}
+	if event.Response != nil && r.scrub(&event.Response.Content) {
+		redacted = append(redacted, "response.content")
 	}
-
 	if event.ToolCall != nil {
-		args := string(event.ToolCall.Arguments)
-		if r.scrub(&args) {
-			event.ToolCall.Arguments = []byte(args)
-			redacted = append(redacted, "tool_call.arguments")
-		}
-		result := string(event.ToolCall.Result)
-		if r.scrub(&result) {
-			event.ToolCall.Result = []byte(result)
-			redacted = append(redacted, "tool_call.result")
-		}
-		if r.scrub(&event.ToolCall.ErrorMsg) {
-			redacted = append(redacted, "tool_call.error_msg")
-		}
+		redacted = append(redacted, r.redactToolCall(event.ToolCall)...)
 	}
-
-	if event.Memory != nil {
-		if r.scrub(&event.Memory.Value) {
-			redacted = append(redacted, "memory.value")
-		}
+	if event.Memory != nil && r.scrub(&event.Memory.Value) {
+		redacted = append(redacted, "memory.value")
 	}
-
-	if event.Reasoning != nil {
-		if r.scrub(&event.Reasoning.Content) {
-			redacted = append(redacted, "reasoning.content")
-		}
+	if event.Reasoning != nil && r.scrub(&event.Reasoning.Content) {
+		redacted = append(redacted, "reasoning.content")
 	}
-
 	if event.Error != nil {
 		if r.scrub(&event.Error.Message) {
 			redacted = append(redacted, "error.message")
@@ -132,6 +107,23 @@ func (r *RegexRedactor) Redact(event *types.Event) []string {
 		}
 	}
 
+	return redacted
+}
+
+// redactToolCall scrubs sensitive data from a ToolCallData payload.
+func (r *RegexRedactor) redactToolCall(tc *types.ToolCallData) []string {
+	var redacted []string
+	if args := string(tc.Arguments); r.scrub(&args) {
+		tc.Arguments = []byte(args)
+		redacted = append(redacted, "tool_call.arguments")
+	}
+	if result := string(tc.Result); r.scrub(&result) {
+		tc.Result = []byte(result)
+		redacted = append(redacted, "tool_call.result")
+	}
+	if r.scrub(&tc.ErrorMsg) {
+		redacted = append(redacted, "tool_call.error_msg")
+	}
 	return redacted
 }
 
