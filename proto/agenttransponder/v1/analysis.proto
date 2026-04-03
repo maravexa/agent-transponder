@@ -1,0 +1,74 @@
+syntax = "proto3";
+
+package agenttransponder.v1;
+
+option go_package = "github.com/agent-transponder/agent-transponder/proto/agenttransponder/v1";
+
+import "google/protobuf/timestamp.proto";
+import "proto/agenttransponder/v1/events.proto";
+
+// AnalysisService runs on the Python analysis engine.
+// The Go ingestion service calls this to submit events for classification.
+service AnalysisService {
+  // Analyze a batch of events from a single session.
+  rpc AnalyzeBatch(AnalyzeBatchRequest) returns (AnalyzeBatchResponse);
+
+  // Stream events for real-time analysis (stretch goal).
+  rpc AnalyzeStream(stream Event) returns (stream Detection);
+
+  // Check which detectors are loaded and healthy.
+  rpc ListDetectors(ListDetectorsRequest) returns (ListDetectorsResponse);
+}
+
+message AnalyzeBatchRequest {
+  string session_id = 1;
+  string agent_id = 2;
+  string tenant_id = 3;
+  repeated Event events = 4;
+}
+
+message AnalyzeBatchResponse {
+  repeated Detection detections = 1;
+  AnalysisMetadata metadata = 2;
+}
+
+message Detection {
+  DetectionType type = 1;
+  Severity severity = 2;
+  double confidence = 3;       // 0.0–1.0
+  string message = 4;
+  repeated string event_ids = 5; // Which events triggered this
+  string evidence = 6;
+}
+
+enum DetectionType {
+  DETECTION_TYPE_UNSPECIFIED = 0;
+  DETECTION_TYPE_TASK_LOOP = 1;
+  DETECTION_TYPE_TOOL_MISUSE = 2;
+  DETECTION_TYPE_GOAL_DRIFT = 3;
+  DETECTION_TYPE_HALLUCINATION = 4;
+  DETECTION_TYPE_FAILURE_CASCADE = 5;
+  DETECTION_TYPE_REWARD_HACKING = 6;
+  DETECTION_TYPE_PERSONALITY_DRIFT = 7;
+}
+
+message AnalysisMetadata {
+  google.protobuf.Timestamp analyzed_at = 1;
+  int32 events_processed = 2;
+  int32 detections_found = 3;
+  map<string, double> detector_latencies_ms = 4; // Per-detector timing
+}
+
+message ListDetectorsRequest {}
+
+message ListDetectorsResponse {
+  repeated DetectorInfo detectors = 1;
+}
+
+message DetectorInfo {
+  string name = 1;
+  string version = 2;
+  DetectionType type = 3;
+  bool enabled = 4;
+  string description = 5;
+}

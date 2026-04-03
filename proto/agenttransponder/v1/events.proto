@@ -1,0 +1,145 @@
+syntax = "proto3";
+
+package agenttransponder.v1;
+
+option go_package = "github.com/agent-transponder/agent-transponder/proto/agenttransponder/v1";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/struct.proto";
+
+// EventIngestion is the service agents use to submit telemetry.
+// The ingestion API implements this service.
+service EventIngestion {
+  // Submit a single event.
+  rpc IngestEvent(IngestEventRequest) returns (IngestEventResponse);
+
+  // Submit a stream of events (for high-throughput agents).
+  rpc IngestEventStream(stream IngestEventRequest) returns (IngestEventStreamResponse);
+
+  // Health check — used by SDK to verify connectivity and auth.
+  rpc Ping(PingRequest) returns (PingResponse);
+}
+
+message IngestEventRequest {
+  Event event = 1;
+}
+
+message IngestEventResponse {
+  bool accepted = 1;
+  string event_id = 2;
+  string error = 3;         // Non-empty if rejected
+  string rejection_reason = 4; // "invalid_hmac", "rate_limited", "schema_violation", etc.
+}
+
+message IngestEventStreamResponse {
+  int64 accepted_count = 1;
+  int64 rejected_count = 2;
+  repeated string errors = 3;
+}
+
+message PingRequest {}
+
+message PingResponse {
+  string version = 1;
+  google.protobuf.Timestamp server_time = 2;
+  string agent_identity = 3;  // Echoes back the identity from the client cert
+}
+
+// Event mirrors the canonical event schema.
+// Field numbers are stable — append only.
+message Event {
+  string id = 1;
+  string session_id = 2;
+  string agent_id = 3;
+  string tenant_id = 4;
+
+  EventType type = 5;
+  Severity severity = 6;
+
+  google.protobuf.Timestamp timestamp = 7;
+  google.protobuf.Duration duration = 8;
+
+  // Content — at most one populated per event type
+  PromptData prompt = 10;
+  ResponseData response = 11;
+  ToolCallData tool_call = 12;
+  MemoryData memory = 13;
+  ReasoningData reasoning = 14;
+  ErrorData error = 15;
+
+  string model = 20;
+  TokenUsage token_usage = 21;
+  map<string, string> labels = 22;
+
+  // Integrity
+  string hmac = 30;
+}
+
+enum EventType {
+  EVENT_TYPE_UNSPECIFIED = 0;
+  EVENT_TYPE_PROMPT = 1;
+  EVENT_TYPE_RESPONSE = 2;
+  EVENT_TYPE_TOOL_CALL = 3;
+  EVENT_TYPE_TOOL_RESULT = 4;
+  EVENT_TYPE_MEMORY_READ = 5;
+  EVENT_TYPE_MEMORY_WRITE = 6;
+  EVENT_TYPE_REASONING_STEP = 7;
+  EVENT_TYPE_ERROR = 8;
+  EVENT_TYPE_RETRY = 9;
+  EVENT_TYPE_METADATA = 10;
+}
+
+enum Severity {
+  SEVERITY_UNSPECIFIED = 0;
+  SEVERITY_DEBUG = 1;
+  SEVERITY_INFO = 2;
+  SEVERITY_WARNING = 3;
+  SEVERITY_ERROR = 4;
+  SEVERITY_CRITICAL = 5;
+}
+
+message PromptData {
+  string content = 1;
+  string role = 2;
+  int32 token_count = 3;
+}
+
+message ResponseData {
+  string content = 1;
+  string finish_reason = 2;
+  int32 token_count = 3;
+}
+
+message ToolCallData {
+  string tool_name = 1;
+  google.protobuf.Struct arguments = 2;
+  google.protobuf.Struct result = 3;
+  bool success = 4;
+  string error_msg = 5;
+  int32 retry_count = 6;
+}
+
+message MemoryData {
+  string operation = 1;
+  string key = 2;
+  string value = 3;
+}
+
+message ReasoningData {
+  int32 step = 1;
+  string content = 2;
+}
+
+message ErrorData {
+  string code = 1;
+  string message = 2;
+  string stacktrace = 3;
+  bool retryable = 4;
+}
+
+message TokenUsage {
+  int32 prompt_tokens = 1;
+  int32 completion_tokens = 2;
+  int32 total_tokens = 3;
+}
