@@ -270,7 +270,7 @@ jobs:
     permissions:
       contents: read
       packages: read
-      security-events: write  # Upload to GitHub Security tab
+      security-events: read
     strategy:
       matrix:
         component: [ingestion, exporter, analysis]
@@ -294,12 +294,12 @@ jobs:
             -o table \
             -o sarif=${{ matrix.component }}-grype.sarif
 
-      - name: Upload SARIF to GitHub Security
+      - name: Upload scan results
         if: always()
-        uses: github/codeql-action/upload-sarif@v4
+        uses: actions/upload-artifact@v4
         with:
-          sarif_file: ${{ matrix.component }}-grype.sarif
-          category: grype-${{ matrix.component }}
+          name: grype-${{ matrix.component }}
+          path: ${{ matrix.component }}-grype.sarif
 
   # ════════════════════════════════════════════
   # Stage 5: Release (tag push only)
