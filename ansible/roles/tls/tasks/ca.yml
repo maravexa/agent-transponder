@@ -5,7 +5,7 @@
     state: directory
     owner: root
     group: root
-    mode:  "0700"
+    mode:  "0755"
 
 - name: Generate CA private key (EC secp384r1)
   community.crypto.openssl_privatekey:
