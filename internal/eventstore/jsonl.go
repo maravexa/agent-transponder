@@ -72,7 +72,7 @@ func (s *JSONLStore) Query(ctx context.Context, filter QueryFilter) ([]*types.Ev
 	s.mu.Lock()
 	// Flush all writers before reading
 	for _, w := range s.writers {
-		w.Flush()
+		_ = w.Flush()
 	}
 	s.mu.Unlock()
 
@@ -201,7 +201,7 @@ func (s *JSONLStore) scanFile(ctx context.Context, path string, filter QueryFilt
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	var results []*types.Event
 	scanner := bufio.NewScanner(f)

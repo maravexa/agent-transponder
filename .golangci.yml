@@ -1,4 +1,6 @@
-# .golangci.yml — Security-focused Go linting configuration
+# .golangci.yml — Security-focused Go linting configuration (golangci-lint v2)
+version: "2"
+
 run:
   timeout: 5m
   modules-download-mode: readonly
@@ -17,11 +19,8 @@ linters:
     - staticcheck    # Comprehensive static analysis
     - errcheck       # Unchecked errors
     - ineffassign    # Unused assignments
-    - typecheck       # Type checking
 
     # Code quality
-    - gofmt
-    - goimports
     - misspell
     - unconvert
     - unparam
@@ -32,31 +31,35 @@ linters:
     - gocyclo
     - gocognit
 
-linters-settings:
-  gosec:
-    severity: high
-    confidence: medium
-    excludes: []
+  settings:
+    gosec:
+      severity: high
+      confidence: medium
+      excludes: []
 
-  gocyclo:
-    min-complexity: 15
+    gocyclo:
+      min-complexity: 15
 
-  gocognit:
-    min-complexity: 20
+    gocognit:
+      min-complexity: 20
 
-  govet:
-    enable-all: true
+    govet:
+      enable-all: true
 
-issues:
-  max-issues-per-linter: 0
-  max-same-issues: 0
-  exclude-rules:
-    # Allow test files to be less strict
-    - path: _test\.go
-      linters:
-        - gosec
-        - errcheck
-    # Skip fieldalignment checks on generated protobuf files
-    - path: '\.pb\.go$'
-      linters:
-        - govet
+  exclusions:
+    rules:
+      # Allow test files to be less strict
+      - path: _test\.go
+        linters:
+          - gosec
+          - errcheck
+      # Skip fieldalignment checks on generated protobuf files
+      - path: '\.pb\.go$'
+        linters:
+          - govet
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+

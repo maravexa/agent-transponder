@@ -40,9 +40,10 @@ jobs:
           cache: true
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v4
+        uses: golangci/golangci-lint-action@v7
         with:
-          version: latest
+          version: v2.1.6
+          install-mode: goinstall
           args: --timeout=5m
 
       - name: Go security lint (gosec)
