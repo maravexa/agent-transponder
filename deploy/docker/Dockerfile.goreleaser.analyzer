@@ -4,7 +4,7 @@
 FROM gcr.io/distroless/static-debian12:nonroot
 
 COPY deploy/docker/passwd /etc/passwd
-COPY at-ingestion /
+COPY at-analyzer /
 
 USER 65534:65534
-ENTRYPOINT ["/at-ingestion"]
+ENTRYPOINT ["/at-analyzer"]

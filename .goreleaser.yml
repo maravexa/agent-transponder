@@ -135,7 +135,7 @@ dockers:
     ids: [at-exporter]
     goos: linux
     goarch: amd64
-    dockerfile: deploy/docker/Dockerfile.goreleaser
+    dockerfile: deploy/docker/Dockerfile.goreleaser.exporter
     image_templates:
       - "ghcr.io/{{ .Env.GITHUB_USER }}/agent-transponder/exporter:{{ .Version }}-amd64"
     build_flag_templates:
@@ -149,7 +149,7 @@ dockers:
     ids: [at-exporter]
     goos: linux
     goarch: arm64
-    dockerfile: deploy/docker/Dockerfile.goreleaser
+    dockerfile: deploy/docker/Dockerfile.goreleaser.exporter
     image_templates:
       - "ghcr.io/{{ .Env.GITHUB_USER }}/agent-transponder/exporter:{{ .Version }}-arm64"
     build_flag_templates:
@@ -163,7 +163,7 @@ dockers:
     ids: [at-analyzer]
     goos: linux
     goarch: amd64
-    dockerfile: deploy/docker/Dockerfile.goreleaser
+    dockerfile: deploy/docker/Dockerfile.goreleaser.analyzer
     image_templates:
       - "ghcr.io/{{ .Env.GITHUB_USER }}/agent-transponder/analyzer:{{ .Version }}-amd64"
     build_flag_templates:
@@ -180,7 +180,7 @@ dockers:
     ids: [at-analyzer]
     goos: linux
     goarch: arm64
-    dockerfile: deploy/docker/Dockerfile.goreleaser
+    dockerfile: deploy/docker/Dockerfile.goreleaser.analyzer
     image_templates:
       - "ghcr.io/{{ .Env.GITHUB_USER }}/agent-transponder/analyzer:{{ .Version }}-arm64"
     build_flag_templates:
