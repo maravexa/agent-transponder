@@ -1,0 +1,9 @@
+---
+- name: Template Grafana main configuration
+  ansible.builtin.template:
+    src: grafana.ini.j2
+    dest: /etc/grafana/grafana.ini
+    owner: grafana
+    group: grafana
+    mode: "0640"
+  notify: restart grafana

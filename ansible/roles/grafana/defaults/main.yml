@@ -1,0 +1,28 @@
+---
+# ---------------------------------------------------------------------------
+# grafana role defaults.
+# Override in group_vars or host_vars as needed.
+# ---------------------------------------------------------------------------
+
+# Package version — must match an available version in the Grafana repo.
+grafana_version: "11.1.0"
+
+# Network binding.
+grafana_listen_address: "0.0.0.0"
+grafana_listen_port: 3000
+
+# Domain used in root_url and strict transport security headers.
+grafana_domain: "{{ inventory_hostname }}"
+
+# Admin credentials — override grafana_admin_password via vault.
+grafana_admin_user: "admin"
+grafana_admin_password: "{{ vault_grafana_admin_password | default('admin') }}"
+
+# Anonymous access — set true in local.yml for frictionless dev access.
+grafana_anonymous_auth: false
+
+# Log level: debug, info, warn, error, critical.
+grafana_log_level: "info"
+
+# Prometheus datasource target host (where Prometheus listens).
+prometheus_target_host: "localhost"

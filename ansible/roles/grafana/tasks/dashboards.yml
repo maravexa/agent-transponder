@@ -1,0 +1,19 @@
+---
+- name: Template Grafana dashboard provider configuration
+  ansible.builtin.template:
+    src: dashboard-provider.yml.j2
+    dest: /etc/grafana/provisioning/dashboards/flight-recorder.yml
+    owner: grafana
+    group: grafana
+    mode: "0640"
+  notify: restart grafana
+
+- name: Copy dashboard JSON files to provisioning directory
+  ansible.builtin.copy:
+    src: dashboards/
+    dest: /var/lib/grafana/dashboards/
+    owner: grafana
+    group: grafana
+    mode: "0640"
+    directory_mode: "0750"
+  notify: restart grafana

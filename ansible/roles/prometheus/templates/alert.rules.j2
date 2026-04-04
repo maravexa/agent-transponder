@@ -1,0 +1,42 @@
+---
+# alert.rules.yml — managed by Ansible (prometheus role)
+# Manual edits will be overwritten on the next playbook run.
+
+groups:
+  - name: flight_recorder
+    rules:
+      - alert: ServiceDown
+        expr: up{job=~"flight_recorder|node_exporter"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{% raw %}{{ $labels.instance }}{% endraw %} is down"
+          description: "{% raw %}{{ $labels.job }}{% endraw %} target {% raw %}{{ $labels.instance }}{% endraw %} has been unreachable for more than 2 minutes."
+
+      - alert: HighEventIngestionLatency
+        expr: flight_recorder_ingestion_latency_seconds > {{ prometheus_alert_ingestion_latency_threshold }}
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Event ingestion latency is high"
+          description: "Ingestion latency has exceeded {{ prometheus_alert_ingestion_latency_threshold }}s for more than 5 minutes."
+
+      - alert: AnalyzerPluginFailure
+        expr: rate(flight_recorder_analyzer_errors_total[5m]) > {{ prometheus_alert_analyzer_error_rate_threshold }}
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Analyzer plugin error rate is elevated"
+          description: "Analyzer error rate has exceeded {{ prometheus_alert_analyzer_error_rate_threshold }} errors/s for more than 3 minutes."
+
+      - alert: DiskSpaceLow
+        expr: node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"} < 0.1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Disk space critically low on {% raw %}{{ $labels.instance }}{% endraw %}"
+          description: "Less than 10% disk space remaining on {% raw %}{{ $labels.instance }}{% endraw %} (mountpoint: {% raw %}{{ $labels.mountpoint }}{% endraw %})."

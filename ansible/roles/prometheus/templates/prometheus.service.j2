@@ -1,0 +1,53 @@
+# prometheus.service — managed by Ansible (prometheus role)
+# Manual edits will be overwritten on the next playbook run.
+
+[Unit]
+Description=Prometheus Monitoring System
+Documentation=https://prometheus.io/docs/
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=prometheus
+Group=prometheus
+ExecStart={{ fr_bin_dir }}/prometheus \
+  --config.file=/etc/prometheus/prometheus.yml \
+  --storage.tsdb.path=/var/lib/prometheus/data \
+  --storage.tsdb.retention.time={{ prometheus_retention }} \
+  --web.listen-address={{ prometheus_listen_address }}:{{ prometheus_listen_port }} \
+  --web.config.file=/etc/prometheus/web.yml \
+  --web.external-url=https://{{ inventory_hostname }}:{{ prometheus_listen_port }}
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=prometheus
+
+# Hardening — deny privilege escalation and isolate the process.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+RestrictRealtime=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+
+# Filesystem access — TSDB data is read/write; configs and certs are read-only.
+ReadWritePaths=/var/lib/prometheus/data
+ReadOnlyPaths=/etc/prometheus {{ fr_tls_dir }}
+
+# No capabilities needed (listening on non-privileged port).
+CapabilityBoundingSet=
+
+LimitNOFILE={{ prometheus_limit_nofile }}
+
+[Install]
+WantedBy=multi-user.target

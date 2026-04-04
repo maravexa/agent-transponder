@@ -1,0 +1,9 @@
+---
+- name: Template node_exporter TLS web config
+  ansible.builtin.template:
+    src: node-exporter-web.yml.j2
+    dest: "{{ fr_config_dir }}/node_exporter-web.yml"
+    owner: node_exporter
+    group: "{{ fr_group }}"
+    mode: "0640"
+  notify: restart node_exporter

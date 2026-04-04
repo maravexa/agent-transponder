@@ -7,10 +7,14 @@
   vars:
     hardening_enabled: false
     tls_self_signed: true
+    grafana_anonymous_auth: true
   roles:
     - common
     - hardening
     - tls
+    - prometheus
+    - grafana
+    - node_exporter
     - ingester
     - analyzer
     - metrics_exporter

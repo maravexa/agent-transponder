@@ -1,0 +1,10 @@
+---
+# web.yml — Prometheus TLS server config
+# Managed by Ansible (prometheus role). Manual edits will be overwritten.
+
+tls_server_config:
+  cert_file:      {{ fr_tls_dir }}/prometheus/cert.pem
+  key_file:       {{ fr_tls_dir }}/prometheus/key.pem
+  client_ca_file: {{ tls_ca_cert }}
+  # Require client certificates from internal CA for all requests.
+  client_auth_type: RequireAndVerifyClientCert

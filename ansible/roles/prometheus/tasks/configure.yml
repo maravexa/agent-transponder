@@ -1,0 +1,38 @@
+---
+- name: Template Prometheus web TLS config
+  ansible.builtin.template:
+    src: web.yml.j2
+    dest: /etc/prometheus/web.yml
+    owner: prometheus
+    group: prometheus
+    mode: "0640"
+
+- name: Template Prometheus main configuration
+  ansible.builtin.template:
+    src: prometheus.yml.j2
+    dest: /etc/prometheus/prometheus.yml
+    owner: prometheus
+    group: prometheus
+    mode: "0640"
+  notify: reload prometheus
+
+- name: Template Prometheus alert rules
+  ansible.builtin.template:
+    src: alert.rules.j2
+    dest: /etc/prometheus/alert.rules.yml
+    owner: prometheus
+    group: prometheus
+    mode: "0640"
+  notify: reload prometheus
+
+- name: Validate Prometheus configuration
+  ansible.builtin.command:
+    cmd: "{{ fr_bin_dir }}/promtool check config /etc/prometheus/prometheus.yml"
+  register: prometheus_config_check
+  changed_when: false
+  failed_when: prometheus_config_check.rc != 0
+
+- name: Fail with clear message if Prometheus config is invalid
+  ansible.builtin.fail:
+    msg: "Prometheus config validation failed: {{ prometheus_config_check.stderr }}"
+  when: prometheus_config_check.rc != 0
