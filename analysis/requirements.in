@@ -1,2 +1,3 @@
 grpcio>=1.65.0
 grpcio-tools>=1.65.0
+setuptools>=77.0.1
