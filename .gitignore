@@ -4,6 +4,8 @@ dist/
 sbom/
 reports/
 /ingestion
+/analyzer
+/exporter
 
 # ── Go ──
 *.exe

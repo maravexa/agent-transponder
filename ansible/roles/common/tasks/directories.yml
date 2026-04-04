@@ -1,5 +1,18 @@
 ---
-- name: Create flight recorder directory tree
+- name: Create traversal directories (world-executable, 0755)
+  ansible.builtin.file:
+    path:  "{{ item }}"
+    state: directory
+    owner: root
+    group: "{{ fr_group }}"
+    mode:  "0755"
+  loop:
+    - "{{ fr_base_dir }}"
+    - "{{ fr_bin_dir }}"
+    - "{{ fr_config_dir }}"
+    - "{{ fr_tls_dir }}"
+
+- name: Create data and log directories (group-restricted, 0750)
   ansible.builtin.file:
     path:  "{{ item }}"
     state: directory
@@ -7,9 +20,5 @@
     group: "{{ fr_group }}"
     mode:  "0750"
   loop:
-    - "{{ fr_base_dir }}"
-    - "{{ fr_bin_dir }}"
-    - "{{ fr_config_dir }}"
-    - "{{ fr_tls_dir }}"
     - "{{ fr_data_dir }}"
     - "{{ fr_log_dir }}"
