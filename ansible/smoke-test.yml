@@ -1,113 +1,162 @@
 ---
-# smoke-test.yml — End-to-end validation of the flight recorder stack.
+# smoke-test.yml — HTTP/HTTPS validation of the flight recorder stack.
 # Run with: make smoke-test
 # Requires: site.yml (or local.yml) to have been applied successfully first.
+#
+# NOTE: Full pipeline test (send event → analyze → export) requires a Go gRPC
+# smoke test tool. Planned for a later phase.
 - name: Flight recorder smoke test
-  hosts: flight_recorder
+  hosts: localhost
+  connection: local
   become: true
-  gather_facts: true
+  gather_facts: false
 
   tasks:
-    - name: Query fr-ingester service state
-      ansible.builtin.systemd:
-        name: fr-ingester
-      register: _svc_ingester
+    # ── Ingester ─────────────────────────────────────────────────────────────
 
-    - name: Assert fr-ingester is running
-      ansible.builtin.assert:
-        that: _svc_ingester.status.ActiveState == "active"
-        fail_msg: "fr-ingester is not running (state: {{ _svc_ingester.status.ActiveState }})"
-        success_msg: "fr-ingester is running"
-
-    - name: Query fr-analyzer service state
-      ansible.builtin.systemd:
-        name: fr-analyzer
-      register: _svc_analyzer
-
-    - name: Assert fr-analyzer is running
-      ansible.builtin.assert:
-        that: _svc_analyzer.status.ActiveState == "active"
-        fail_msg: "fr-analyzer is not running (state: {{ _svc_analyzer.status.ActiveState }})"
-        success_msg: "fr-analyzer is running"
-
-    - name: Query fr-metrics-exporter service state
-      ansible.builtin.systemd:
-        name: fr-metrics-exporter
-      register: _svc_exporter
-
-    - name: Assert fr-metrics-exporter is running
-      ansible.builtin.assert:
-        that: _svc_exporter.status.ActiveState == "active"
-        fail_msg: "fr-metrics-exporter is not running (state: {{ _svc_exporter.status.ActiveState }})"
-        success_msg: "fr-metrics-exporter is running"
-
-    - name: POST synthetic test event to ingester
+    - name: Verify ingester is healthy
       ansible.builtin.uri:
-        url: "https://{{ ansible_default_ipv4.address | default('127.0.0.1') }}:8443/events"
-        method: POST
-        body_format: json
-        body:
-          session_id: "smoke-test-{{ ansible_date_time.iso8601 }}"
-          event_type: "tool_call"
-          agent_id: "smoke-test-agent"
-          timestamp: "{{ ansible_date_time.iso8601 }}"
-          data:
-            tool: "smoke_test_tool"
-            input: "ping"
-            output: "pong"
-            latency_ms: 42
+        url: "http://localhost:8081/healthz"
+        status_code: [200]
+
+    - name: Verify ingester metrics endpoint is reachable
+      ansible.builtin.uri:
+        url: "http://localhost:8082/metrics"
+        return_content: true
+        status_code: [200]
+      register: _ingester_metrics
+
+    - name: Verify ingester exposes Prometheus metrics
+      ansible.builtin.assert:
+        that: "'agent_transponder_' in _ingester_metrics.content"
+        fail_msg: "Ingester metrics endpoint not serving agent_transponder_ metrics"
+
+    # ── Analyzer ─────────────────────────────────────────────────────────────
+    # Analyzer requires mTLS (RequireAndVerifyClientCert). Use the prometheus
+    # cert — any cert signed by the internal CA satisfies the requirement.
+
+    - name: Verify analyzer is healthy
+      ansible.builtin.uri:
+        url: "https://localhost:8420/health"
         ca_path: "{{ tls_ca_cert }}"
-        status_code: [200, 201, 202, 204]
-      register: _ingester_response
+        client_cert: "{{ fr_tls_dir }}/prometheus/cert.pem"
+        client_key: "{{ fr_tls_dir }}/prometheus/key.pem"
+        status_code: [200]
 
-    - name: Assert ingester accepted the event
-      ansible.builtin.assert:
-        that: _ingester_response.status in [200, 201, 202, 204]
-        fail_msg: "Ingester returned unexpected status {{ _ingester_response.status }}"
-        success_msg: "Ingester accepted event (HTTP {{ _ingester_response.status }})"
+    # ── Metrics Exporter ──────────────────────────────────────────────────────
+    # Exporter uses VerifyClientCertIfGiven — client cert not required.
 
-    - name: Wait for analyzer to produce a finding (up to 30 seconds)
-      ansible.builtin.find:
-        paths: "{{ fr_data_dir }}/findings"
-        patterns: "*.jsonl"
-        age: "-1m"
-      register: _findings
-      until: _findings.matched > 0
-      retries: 6
-      delay: 5
-
-    - name: Assert at least one finding was produced
-      ansible.builtin.assert:
-        that: _findings.matched > 0
-        fail_msg: "No findings produced in {{ fr_data_dir }}/findings after 30 seconds"
-        success_msg: "Analyzer produced {{ _findings.matched }} finding file(s)"
-
-    - name: GET metrics from exporter (up to 30 seconds)
+    - name: Verify metrics exporter is healthy
       ansible.builtin.uri:
-        url: "https://{{ ansible_default_ipv4.address | default('127.0.0.1') }}:8430/metrics"
-        method: GET
+        url: "https://localhost:8430/health"
+        ca_path: "{{ tls_ca_cert }}"
+        status_code: [200]
+
+    - name: Verify metrics exporter serves Prometheus metrics
+      ansible.builtin.uri:
+        url: "https://localhost:8430/metrics"
         ca_path: "{{ tls_ca_cert }}"
         return_content: true
-      register: _metrics_response
-      until: _metrics_response.status == 200
-      retries: 6
-      delay: 5
+        status_code: [200]
+      register: _exporter_metrics
 
-    - name: Assert metrics response contains expected namespace
+    - name: Verify flight_recorder metrics are present
       ansible.builtin.assert:
-        that: "'flight_recorder_' in _metrics_response.content"
-        fail_msg: "Metrics endpoint did not return flight_recorder_ prefixed metrics"
-        success_msg: "Metrics exporter is serving flight_recorder_ metrics"
+        that: "'flight_recorder_' in _exporter_metrics.content"
+        fail_msg: "Exporter metrics endpoint not serving flight_recorder_ metrics"
 
-    - name: Smoke test summary
+    # ── Prometheus ────────────────────────────────────────────────────────────
+    # Prometheus web.yml sets client_auth_type: RequireAndVerifyClientCert.
+
+    - name: Verify Prometheus is healthy
+      ansible.builtin.uri:
+        url: "https://localhost:9090/-/healthy"
+        ca_path: "{{ tls_ca_cert }}"
+        client_cert: "{{ fr_tls_dir }}/prometheus/cert.pem"
+        client_key: "{{ fr_tls_dir }}/prometheus/key.pem"
+        status_code: [200]
+
+    # ── Grafana ───────────────────────────────────────────────────────────────
+    # Grafana serves HTTPS but does not require client certs.
+
+    - name: Verify Grafana is healthy
+      ansible.builtin.uri:
+        url: "https://localhost:3000/api/health"
+        ca_path: "{{ tls_ca_cert }}"
+        status_code: [200]
+
+    # ── Node Exporter ─────────────────────────────────────────────────────────
+    # Ubuntu 24.04 apt package runs plain HTTP — no TLS.
+
+    - name: Verify node exporter is serving metrics
+      ansible.builtin.uri:
+        url: "http://localhost:9100/metrics"
+        return_content: true
+        status_code: [200]
+      register: _node_metrics
+
+    - name: Verify node exporter has CPU metrics
+      ansible.builtin.assert:
+        that: "'node_cpu_seconds_total' in _node_metrics.content"
+        fail_msg: "Node exporter not serving expected metrics"
+
+    # ── Prometheus Scrape Targets ─────────────────────────────────────────────
+
+    - name: Query Prometheus for active targets
+      ansible.builtin.uri:
+        url: "https://localhost:9090/api/v1/targets"
+        ca_path: "{{ tls_ca_cert }}"
+        client_cert: "{{ fr_tls_dir }}/prometheus/cert.pem"
+        client_key: "{{ fr_tls_dir }}/prometheus/key.pem"
+        return_content: true
+        status_code: [200]
+      register: _targets
+
+    - name: Verify Prometheus has scrape targets
+      ansible.builtin.assert:
+        that: "_targets.json.data.activeTargets | length > 0"
+        fail_msg: "Prometheus has no active scrape targets"
+
+    # ── Port Conflict Check ───────────────────────────────────────────────────
+
+    - name: Verify no port conflicts (each port has exactly one listener)
+      ansible.builtin.shell: |
+        ss -tlnp | grep -c ':{{ item }} ' || true
+      loop:
+        - 8443
+        - 8081
+        - 8082
+        - 8420
+        - 8430
+        - 9090
+        - 9100
+        - 3000
+      register: _port_checks
+      changed_when: false
+
+    - name: Assert each port has at most one listener
+      ansible.builtin.assert:
+        that: "item.stdout | int <= 1"
+        fail_msg: "Port conflict detected on port {{ item.item }}"
+      loop: "{{ _port_checks.results }}"
+      loop_control:
+        label: "port {{ item.item }}"
+
+    # ── Summary ───────────────────────────────────────────────────────────────
+
+    - name: Print smoke test summary
       ansible.builtin.debug:
-        msg:
-          - "============================================"
-          - " Flight Recorder Smoke Test: PASSED"
-          - "============================================"
-          - "  fr-ingester:         running"
-          - "  fr-analyzer:         running"
-          - "  fr-metrics-exporter: running"
-          - "  Event pipeline:      flowing"
-          - "  Metrics endpoint:    exposed"
-          - "============================================"
+        msg: |
+          ══════════════════════════════════════
+          Smoke Test PASSED
+          ══════════════════════════════════════
+          Ingester:         healthy (gRPC :8443, health :8081, metrics :8082)
+          Analyzer:         healthy (HTTPS :8420)
+          Metrics Exporter: healthy (HTTPS :8430)
+          Prometheus:       healthy (HTTPS :9090)
+          Grafana:          healthy (HTTPS :3000)
+          Node Exporter:    healthy (HTTP :9100)
+          ──────────────────────────────────────
+          NOTE: Full pipeline test (send event → analyze → export)
+          requires a Go gRPC smoke test tool. Planned for a later phase.
+          ══════════════════════════════════════
