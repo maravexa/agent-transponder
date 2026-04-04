@@ -96,7 +96,7 @@ func (s *HashChainSink) Verify(ctx context.Context, fromSeq int64) (int64, error
 	if err != nil {
 		return -1, fmt.Errorf("open audit log for verification: %w", err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	scanner := bufio.NewScanner(f)
 	scanner.Buffer(make([]byte, 256*1024), 256*1024)
@@ -165,7 +165,7 @@ func (s *HashChainSink) Close() error {
 // The entry_hash field itself is excluded.
 func (s *HashChainSink) computeHash(entry Entry) string {
 	h := sha256.New()
-	fmt.Fprintf(h, "%d|%s|%s|%s|%s|%s|%s|%s",
+	_, _ = fmt.Fprintf(h, "%d|%s|%s|%s|%s|%s|%s|%s",
 		entry.SequenceNum,
 		entry.PreviousHash,
 		entry.Timestamp.UTC().Format(time.RFC3339Nano),
@@ -188,7 +188,7 @@ func (s *HashChainSink) resumeChain() error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	scanner := bufio.NewScanner(f)
 	scanner.Buffer(make([]byte, 256*1024), 256*1024)
