@@ -288,7 +288,8 @@ jobs:
         run: |
           grype ${{ env.REGISTRY }}/${{ matrix.component }}:sha-${GITHUB_SHA::7} \
             --fail-on high \
-            -o sarif > ${{ matrix.component }}-grype.sarif
+            -o table \
+            -o sarif=${{ matrix.component }}-grype.sarif
 
       - name: Upload SARIF to GitHub Security
         if: always()
