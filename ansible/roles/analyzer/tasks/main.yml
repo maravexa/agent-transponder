@@ -1,6 +1,7 @@
 ---
-- name: Install analyzer binary
-  ansible.builtin.include_tasks: install.yml
+- name: OS-specific setup
+  ansible.builtin.import_tasks: os_preflight.yml
+  become: true
 
 - name: Configure analyzer
   ansible.builtin.include_tasks: configure.yml

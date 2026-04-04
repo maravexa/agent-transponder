@@ -27,7 +27,7 @@
 
 - name: Validate Prometheus configuration
   ansible.builtin.command:
-    cmd: "{{ fr_bin_dir }}/promtool check config /etc/prometheus/prometheus.yml"
+    cmd: /usr/bin/promtool check config /etc/prometheus/prometheus.yml
   register: prometheus_config_check
   changed_when: false
   failed_when: prometheus_config_check.rc != 0

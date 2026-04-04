@@ -36,6 +36,11 @@ fr_base_packages:
   - rsync
   - unzip
 
+# OS-specific service and path defaults (Ubuntu 24.x values).
+# Adding RHEL support later means only adding install_rhel9.yml — not touching these callers.
+common_chrony_service_name: chrony
+common_chrony_config_path:  /etc/chrony/chrony.conf
+
 # NTP pool servers templated into chrony.conf.
 common_ntp_servers:
   - 0.pool.ntp.org

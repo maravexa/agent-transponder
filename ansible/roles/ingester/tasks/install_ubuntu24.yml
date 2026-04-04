@@ -1,0 +1,23 @@
+---
+# Ubuntu 24.x-specific (linux-amd64): validate and copy the ingester binary from dist/.
+
+- name: Check ingester binary exists on controller
+  ansible.builtin.stat:
+    path: "{{ fr_dist_dir }}/ingester"
+  register: _ingester_binary
+  delegate_to: localhost
+  become: false
+
+- name: Fail if ingester binary is missing
+  ansible.builtin.fail:
+    msg: "Binary not found at {{ fr_dist_dir }}/ingester. Run make build-all first."
+  when: not _ingester_binary.stat.exists
+
+- name: Copy ingester binary to target
+  ansible.builtin.copy:
+    src:   "{{ fr_dist_dir }}/ingester"
+    dest:  "{{ fr_bin_dir }}/ingester"
+    owner: root
+    group: "{{ fr_group }}"
+    mode:  "0755"
+  notify: restart ingester

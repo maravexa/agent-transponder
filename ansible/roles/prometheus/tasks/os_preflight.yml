@@ -1,0 +1,19 @@
+---
+- name: Include Ubuntu 24.x tasks
+  ansible.builtin.include_tasks: install_ubuntu24.yml
+  when:
+    - ansible_facts.os_family == "Debian"
+    - ansible_facts.lsb.id == "Ubuntu"
+    - ansible_facts.lsb.major_release == "24"
+
+- name: Fail on unsupported OS
+  ansible.builtin.fail:
+    msg: >-
+      Unsupported OS: {{ ansible_facts.os_family }}
+      {{ ansible_facts.lsb.id | default('unknown') }}
+      {{ ansible_facts.lsb.major_release | default('unknown') }}.
+      Only Ubuntu 24.x is currently supported.
+  when:
+    - not (ansible_facts.os_family == "Debian" and
+           ansible_facts.lsb.id == "Ubuntu" and
+           ansible_facts.lsb.major_release == "24")

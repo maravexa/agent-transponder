@@ -1,6 +1,7 @@
 ---
-- name: Install Grafana
-  ansible.builtin.import_tasks: install.yml
+- name: OS-specific setup
+  ansible.builtin.import_tasks: os_preflight.yml
+  become: true
 
 - name: Configure Grafana
   ansible.builtin.import_tasks: configure.yml
@@ -11,5 +12,5 @@
 - name: Provision Grafana dashboards
   ansible.builtin.import_tasks: dashboards.yml
 
-- name: Configure Grafana systemd service
+- name: Deploy Grafana systemd service
   ansible.builtin.import_tasks: service.yml

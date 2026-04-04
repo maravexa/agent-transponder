@@ -13,9 +13,9 @@
     path:  "{{ fr_tls_dir }}/{{ item.name }}/key.pem"
     type:  ECC
     curve: "{{ tls_key_curve }}"
-    owner: "{{ item.user }}"
+    owner: root
     group: "{{ fr_group }}"
-    mode:  "0600"
+    mode:  "0640"
     force: false
   loop: "{{ tls_services }}"
 

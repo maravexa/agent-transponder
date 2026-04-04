@@ -1,0 +1,23 @@
+---
+# Ubuntu 24.x-specific (linux-amd64): validate and copy the analyzer binary from dist/.
+
+- name: Check analyzer binary exists on controller
+  ansible.builtin.stat:
+    path: "{{ fr_dist_dir }}/analyzer"
+  register: _analyzer_binary
+  delegate_to: localhost
+  become: false
+
+- name: Fail if analyzer binary is missing
+  ansible.builtin.fail:
+    msg: "Binary not found at {{ fr_dist_dir }}/analyzer. Run make build-all first."
+  when: not _analyzer_binary.stat.exists
+
+- name: Copy analyzer binary to target
+  ansible.builtin.copy:
+    src:   "{{ fr_dist_dir }}/analyzer"
+    dest:  "{{ fr_bin_dir }}/analyzer"
+    owner: root
+    group: "{{ fr_group }}"
+    mode:  "0755"
+  notify: restart analyzer

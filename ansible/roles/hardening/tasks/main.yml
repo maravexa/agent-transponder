@@ -2,6 +2,9 @@
 - name: Apply system hardening
   when: hardening_enabled
   block:
+    - name: OS-specific setup
+      ansible.builtin.include_tasks: os_preflight.yml
+
     - name: Harden SSH daemon
       ansible.builtin.include_tasks: sshd.yml
       when: hardening_sshd_enabled
