@@ -20,14 +20,14 @@ import (
 // dispatches each new event through the registered detectors, and writes
 // findings to the findings directory.
 type Analyzer struct {
-	cfg         *Config
-	plugins     *PluginsConfig
-	detectors   []Detector
-	cursor      *Cursor
-	cursorPath  string
-	mu          sync.Mutex // guards lastProcessed
+	cfg           *Config
+	plugins       *PluginsConfig
+	detectors     []Detector
+	cursor        *Cursor
+	cursorPath    string
+	mu            sync.Mutex // guards lastProcessed
 	lastProcessed time.Time
-	logger      *slog.Logger
+	logger        *slog.Logger
 }
 
 // New creates an Analyzer from the loaded configs and a set of detectors.
@@ -126,11 +126,7 @@ func (a *Analyzer) poll(ctx context.Context) error {
 			continue
 		}
 
-		findings, err := a.runDetectors(events)
-		if err != nil {
-			a.logger.Warn("detector error", "file", name, "err", err)
-			continue
-		}
+		findings := a.runDetectors(events)
 
 		if len(findings) > 0 {
 			if err := a.writeFindings(findings); err != nil {
@@ -241,7 +237,7 @@ func (a *Analyzer) readNewEvents(path string, offset int64) ([]*types.Event, int
 
 // runDetectors dispatches each event through all registered detectors and
 // collects the resulting findings.
-func (a *Analyzer) runDetectors(events []*types.Event) ([]Finding, error) {
+func (a *Analyzer) runDetectors(events []*types.Event) []Finding {
 	var all []Finding
 	for _, event := range events {
 		for _, det := range a.detectors {
@@ -254,7 +250,7 @@ func (a *Analyzer) runDetectors(events []*types.Event) ([]Finding, error) {
 			all = append(all, findings...)
 		}
 	}
-	return all, nil
+	return all
 }
 
 // writeFindings appends findings as JSONL to the findings file for today.

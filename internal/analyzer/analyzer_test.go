@@ -179,7 +179,7 @@ func TestAnalyzer_CursorResumeFromOffset(t *testing.T) {
 	}
 	writeEventFile(t, eventsFile, batch1)
 
-	if err := az.Poll(context.Background()); err != nil {
+	if err = az.Poll(context.Background()); err != nil {
 		t.Fatal(err)
 	}
 	findingsAfterBatch1 := readFindings(t, findingsDir)

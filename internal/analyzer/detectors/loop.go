@@ -157,7 +157,7 @@ func (d *LoopDetector) detectLoops(event *types.Event, sess *loopSession) []anal
 					sess.emittedStartIDs[startKey] = struct{}{}
 
 					extra := reps - d.minReps
-					confidence := min64(0.5+float64(extra)*0.1, 1.0)
+					confidence := min(0.5+float64(extra)*0.1, 1.0)
 
 					toolList := make([]string, seqLen)
 					copy(toolList, window)
@@ -171,7 +171,7 @@ func (d *LoopDetector) detectLoops(event *types.Event, sess *loopSession) []anal
 						Detector:   d.Name(),
 						Type:       string(types.DetectionLoop),
 						Severity:   string(types.SeverityWarning),
-						Confidence: roundF(confidence, 2),
+						Confidence: round2(confidence),
 						Message: fmt.Sprintf(
 							"Tool-call sequence %v repeated %dx (threshold: %d)",
 							toolList, reps, d.minReps,
@@ -210,18 +210,7 @@ func sliceEq(a, b []string) bool {
 	return true
 }
 
-func min64(a, b float64) float64 {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-// roundF rounds f to decimalPlaces decimal places.
-func roundF(f float64, decimalPlaces int) float64 {
-	pow := 1.0
-	for i := 0; i < decimalPlaces; i++ {
-		pow *= 10
-	}
-	return float64(int(f*pow+0.5)) / pow
+// round2 rounds f to 2 decimal places.
+func round2(f float64) float64 {
+	return float64(int(f*100+0.5)) / 100
 }
