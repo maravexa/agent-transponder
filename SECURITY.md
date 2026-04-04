@@ -14,7 +14,7 @@ report it responsibly.
 
 **Do NOT open a public GitHub issue for security vulnerabilities.**
 
-Instead, please email: **security@your-domain.com**
+Instead, please email: **me@maravexa.com**
 
 Include:
 - Description of the vulnerability

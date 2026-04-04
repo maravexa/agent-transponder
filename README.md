@@ -118,7 +118,7 @@ make smoke-test
 
 ```bash
 # Check all services are up
-for svc in ingester analyzer metrics-exporter prometheus grafana node-exporter; do
+for svc in ingester analyzer metrics-exporter prometheus grafana prometheus-node-exporter; do
   systemctl is-active flight-recorder-$svc 2>/dev/null || systemctl is-active $svc
 done
 
