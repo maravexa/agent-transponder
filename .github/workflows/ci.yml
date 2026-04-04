@@ -282,11 +282,10 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install grype
-        uses: anchore/scan-action/download-grype@v4
+        run: curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
 
       - name: Scan for vulnerabilities
         run: |
-          grype db update
           grype ${{ env.REGISTRY }}/${{ matrix.component }}:sha-${GITHUB_SHA::7} \
             --fail-on high \
             -o sarif > ${{ matrix.component }}-grype.sarif
