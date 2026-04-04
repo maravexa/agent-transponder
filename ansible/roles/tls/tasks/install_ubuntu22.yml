@@ -1,0 +1,10 @@
+---
+# Ubuntu 22.x-specific: ensure dependencies for community.crypto modules are present.
+
+- name: Install openssl and python3-cryptography (required for community.crypto)
+  ansible.builtin.apt:
+    name:
+      - openssl
+      - python3-cryptography
+    state: present
+    update_cache: false

@@ -1,0 +1,19 @@
+---
+# Ubuntu 22.x-specific: install hardening packages.
+# Service names on Ubuntu: ssh (not sshd), nftables, auditd.
+
+- name: Install nftables firewall
+  ansible.builtin.apt:
+    name: nftables
+    state: present
+    update_cache: false
+
+- name: Install auditd
+  ansible.builtin.apt:
+    name: auditd
+    state: present
+
+- name: Ensure openssh-server is installed
+  ansible.builtin.apt:
+    name: openssh-server
+    state: present

@@ -1,0 +1,32 @@
+---
+# Ubuntu 22.x-specific: install Prometheus from the Ubuntu universe repository.
+# The 'prometheus' package is available in Ubuntu 22.04 (Jammy) universe — no
+# external repo or GPG key needed. apt handles versioning.
+
+- name: Install Prometheus via apt
+  ansible.builtin.apt:
+    name: prometheus
+    state: present
+    update_cache: true
+
+- name: Add prometheus user to flight-recorder supplementary group
+  ansible.builtin.user:
+    name:   prometheus
+    groups: "{{ fr_group }}"
+    append: true
+
+- name: Create /etc/prometheus directory
+  ansible.builtin.file:
+    path:  /etc/prometheus
+    state: directory
+    owner: prometheus
+    group: prometheus
+    mode:  "0750"
+
+- name: Create Prometheus data directory
+  ansible.builtin.file:
+    path:  /var/lib/prometheus
+    state: directory
+    owner: prometheus
+    group: prometheus
+    mode:  "0750"
