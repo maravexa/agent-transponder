@@ -1,0 +1,39 @@
+# prometheus.service drop-in — managed by Ansible (prometheus role)
+# Overrides the apt package-provided service unit with custom flags and sandboxing.
+# Manual edits will be overwritten on the next playbook run.
+
+[Service]
+# Clear and reset ExecStart to apply our custom flags on top of the package unit.
+ExecStart=
+ExecStart=/usr/bin/prometheus \
+  --config.file=/etc/prometheus/prometheus.yml \
+  --storage.tsdb.path=/var/lib/prometheus \
+  --storage.tsdb.retention.time={{ prometheus_retention }} \
+  --web.listen-address={{ prometheus_listen_address }}:{{ prometheus_listen_port }} \
+  --web.config.file=/etc/prometheus/web.yml \
+  --web.external-url=https://{{ inventory_hostname }}:{{ prometheus_listen_port }}
+ExecReload=/bin/kill -HUP $MAINPID
+
+# Hardening — deny privilege escalation and isolate the process.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+RestrictRealtime=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+
+# Filesystem access — TSDB data is read/write; configs and certs are read-only.
+ReadWritePaths=/var/lib/prometheus
+ReadOnlyPaths=/etc/prometheus {{ fr_tls_dir }}
+
+# No capabilities needed (listening on non-privileged port).
+CapabilityBoundingSet=
+
+LimitNOFILE={{ prometheus_limit_nofile }}

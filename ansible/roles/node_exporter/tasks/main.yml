@@ -1,9 +1,10 @@
 ---
-- name: Install node_exporter
-  ansible.builtin.import_tasks: install.yml
+- name: OS-specific setup
+  ansible.builtin.import_tasks: os_preflight.yml
+  become: true
 
 - name: Configure node_exporter
   ansible.builtin.import_tasks: configure.yml
 
-- name: Configure node_exporter systemd service
+- name: Deploy node_exporter systemd service
   ansible.builtin.import_tasks: service.yml

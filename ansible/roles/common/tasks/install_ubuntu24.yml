@@ -1,0 +1,41 @@
+---
+# Ubuntu 24.x-specific: package installs, user/group creation, directory tree.
+
+- name: Install base system packages (apt)
+  ansible.builtin.apt:
+    name: "{{ fr_base_packages }}"
+    state: present
+    update_cache: true
+
+- name: Create flight-recorder system group
+  ansible.builtin.group:
+    name: "{{ fr_group }}"
+    system: true
+    state: present
+
+- name: Create flight recorder service accounts
+  ansible.builtin.user:
+    name:        "{{ item.name }}"
+    group:       "{{ fr_group }}"
+    home:        "{{ item.home }}"
+    comment:     "{{ item.comment }}"
+    shell:       /usr/sbin/nologin
+    system:      true
+    create_home: true
+    state:       present
+  loop: "{{ fr_users }}"
+
+- name: Create flight recorder directory tree
+  ansible.builtin.file:
+    path:  "{{ item }}"
+    state: directory
+    owner: root
+    group: "{{ fr_group }}"
+    mode:  "0750"
+  loop:
+    - "{{ fr_base_dir }}"
+    - "{{ fr_bin_dir }}"
+    - "{{ fr_config_dir }}"
+    - "{{ fr_tls_dir }}"
+    - "{{ fr_data_dir }}"
+    - "{{ fr_log_dir }}"

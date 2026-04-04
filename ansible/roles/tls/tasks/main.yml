@@ -1,4 +1,8 @@
 ---
+- name: OS-specific setup
+  ansible.builtin.import_tasks: os_preflight.yml
+  become: true
+
 - name: Generate internal CA key and certificate
   ansible.builtin.include_tasks: ca.yml
 

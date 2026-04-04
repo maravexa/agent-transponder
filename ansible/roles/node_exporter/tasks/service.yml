@@ -1,16 +1,30 @@
 ---
-- name: Template node_exporter systemd service unit
-  ansible.builtin.template:
-    src: node-exporter.service.j2
-    dest: /etc/systemd/system/node_exporter.service
+- name: Remove legacy custom node_exporter service unit (replaced by drop-in)
+  ansible.builtin.file:
+    path:  /etc/systemd/system/node_exporter.service
+    state: absent
+  notify: restart node_exporter
+
+- name: Create node_exporter systemd service drop-in directory
+  ansible.builtin.file:
+    path:  /etc/systemd/system/prometheus-node-exporter.service.d
+    state: directory
     owner: root
     group: root
-    mode: "0644"
+    mode:  "0755"
+
+- name: Template node_exporter systemd sandboxing drop-in
+  ansible.builtin.template:
+    src:   node-exporter-override.conf.j2
+    dest:  /etc/systemd/system/prometheus-node-exporter.service.d/override.conf
+    owner: root
+    group: root
+    mode:  "0644"
   notify: restart node_exporter
 
 - name: Enable and start node_exporter service
   ansible.builtin.systemd:
-    name: node_exporter
-    enabled: true
-    state: started
+    name:         prometheus-node-exporter
+    enabled:      true
+    state:        started
     daemon_reload: true

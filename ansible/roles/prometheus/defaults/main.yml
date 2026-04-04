@@ -2,12 +2,8 @@
 # ---------------------------------------------------------------------------
 # prometheus role defaults.
 # Override in group_vars or host_vars as needed.
+# Prometheus is installed from the Ubuntu 24.04 universe apt repository.
 # ---------------------------------------------------------------------------
-
-# Binary version and checksum — update together when upgrading.
-# Checksum for prometheus-<version>.linux-amd64.tar.gz from GitHub releases.
-prometheus_version: "2.53.0"
-prometheus_checksum: "sha256:FIXME_REPLACE_WITH_ACTUAL_CHECKSUM"
 
 # Network binding.
 prometheus_listen_address: "0.0.0.0"

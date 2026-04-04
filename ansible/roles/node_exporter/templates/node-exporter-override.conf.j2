@@ -1,0 +1,40 @@
+# prometheus-node-exporter.service drop-in — managed by Ansible (node_exporter role)
+# Overrides the apt package-provided unit with custom flags, user, and sandboxing.
+# Manual edits will be overwritten on the next playbook run.
+
+[Service]
+User=node_exporter
+Group=node_exporter
+# proc group grants access to /proc with hidepid=2 (set by hardening role).
+SupplementaryGroups=proc
+
+# Clear and reset ExecStart to apply our custom flags (TLS web config).
+ExecStart=
+ExecStart=/usr/bin/prometheus-node-exporter \
+  --web.listen-address={{ node_exporter_listen_address }}:{{ node_exporter_listen_port }} \
+  --web.config.file={{ fr_config_dir }}/node_exporter-web.yml \
+  --collector.systemd \
+  --collector.processes \
+  --no-collector.wifi \
+  --no-collector.infiniband
+
+# Hardening — deny privilege escalation and isolate the process.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+RestrictRealtime=true
+LockPersonality=true
+
+# node_exporter reads /proc and /sys for metrics — implicitly accessible via proc group.
+# Config and TLS certs are read-only.
+ReadOnlyPaths={{ fr_config_dir }} {{ fr_tls_dir }}
+
+# No capabilities needed (listening on non-privileged port).
+CapabilityBoundingSet=

@@ -1,0 +1,7 @@
+---
+- name: Enable and start chrony
+  ansible.builtin.service:
+    name:    "{{ common_chrony_service_name }}"
+    enabled: true
+    state:   started
+  become: true

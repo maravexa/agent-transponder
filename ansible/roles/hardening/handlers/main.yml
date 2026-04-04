@@ -1,7 +1,7 @@
 ---
-- name: Restart sshd
+- name: Restart ssh
   ansible.builtin.service:
-    name:  sshd
+    name:  ssh
     state: restarted
 
 - name: Reload nftables

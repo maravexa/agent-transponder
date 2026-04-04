@@ -1,16 +1,30 @@
 ---
-- name: Template Prometheus systemd service unit
-  ansible.builtin.template:
-    src: prometheus.service.j2
-    dest: /etc/systemd/system/prometheus.service
+- name: Remove legacy custom prometheus service unit (replaced by drop-in)
+  ansible.builtin.file:
+    path:  /etc/systemd/system/prometheus.service
+    state: absent
+  notify: restart prometheus
+
+- name: Create Prometheus systemd service drop-in directory
+  ansible.builtin.file:
+    path:  /etc/systemd/system/prometheus.service.d
+    state: directory
     owner: root
     group: root
-    mode: "0644"
+    mode:  "0755"
+
+- name: Template Prometheus systemd sandboxing drop-in
+  ansible.builtin.template:
+    src:   prometheus-override.conf.j2
+    dest:  /etc/systemd/system/prometheus.service.d/override.conf
+    owner: root
+    group: root
+    mode:  "0644"
   notify: restart prometheus
 
 - name: Enable and start Prometheus service
   ansible.builtin.systemd:
-    name: prometheus
-    enabled: true
-    state: started
+    name:         prometheus
+    enabled:      true
+    state:        started
     daemon_reload: true
