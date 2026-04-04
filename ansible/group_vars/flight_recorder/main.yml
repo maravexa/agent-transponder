@@ -21,8 +21,8 @@ fr_dist_dir: "{{ playbook_dir }}/../dist"
 # fr_ingester_hmac_secret: "{{ vault_ingester_hmac_secret }}"
 
 # Ports to open in the firewall for flight recorder nodes.
-# Variable name must be firewall_open_ports — that is what nftables.conf.j2 iterates.
-firewall_open_ports:
+# Variable name must be hardening_firewall_open_ports — that is what nftables.conf.j2 iterates.
+hardening_firewall_open_ports:
   - { port: 8443, proto: tcp, comment: "ingester gRPC (mTLS)" }
   - { port: 8081, proto: tcp, comment: "ingester health" }
   - { port: 8082, proto: tcp, comment: "ingester metrics" }

@@ -1,5 +1,5 @@
 ---
-- name: restart analyzer
+- name: Restart analyzer
   ansible.builtin.systemd:
     name: fr-analyzer
     state: restarted

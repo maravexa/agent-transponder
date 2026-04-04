@@ -6,7 +6,7 @@
     owner: root
     group: root
     mode: "0644"
-  notify: restart analyzer
+  notify: Restart analyzer
 
 - name: Enable and start fr-analyzer
   ansible.builtin.systemd:

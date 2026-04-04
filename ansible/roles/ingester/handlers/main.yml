@@ -1,5 +1,5 @@
 ---
-- name: restart ingester
+- name: Restart ingester
   ansible.builtin.systemd:
     name: fr-ingester
     state: restarted

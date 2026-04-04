@@ -3,43 +3,10 @@
 # common role defaults — all values overridable via group_vars or host_vars.
 # ---------------------------------------------------------------------------
 
-# System group owning shared resources.
-fr_group: flight-recorder
-
-# Directory layout.
-fr_base_dir:   /opt/flight-recorder
-fr_bin_dir:    /opt/flight-recorder/bin
-fr_config_dir: /etc/flight-recorder
-fr_tls_dir:    /etc/flight-recorder/tls
-fr_data_dir:   /var/lib/flight-recorder
-fr_log_dir:    /var/log/flight-recorder
-
-# Service accounts created by users.yml.
-fr_users:
-  - name:    fr-ingester
-    home:    /opt/flight-recorder/ingester
-    comment: "Flight Recorder Ingestion Service"
-  - name:    fr-analyzer
-    home:    /opt/flight-recorder/analyzer
-    comment: "Flight Recorder Analysis Service"
-  - name:    fr-exporter
-    home:    /opt/flight-recorder/exporter
-    comment: "Flight Recorder Metrics Exporter"
-
-# Base packages installed on every node.
-fr_base_packages:
-  - curl
-  - tar
-  - gzip
-  - jq
-  - chrony
-  - rsync
-  - unzip
-
 # OS-specific service and path defaults (Ubuntu 24.x values).
 # Adding RHEL support later means only adding install_rhel9.yml — not touching these callers.
 common_chrony_service_name: chrony
-common_chrony_config_path:  /etc/chrony/chrony.conf
+common_chrony_config_path: /etc/chrony/chrony.conf
 
 # NTP pool servers templated into chrony.conf.
 common_ntp_servers:

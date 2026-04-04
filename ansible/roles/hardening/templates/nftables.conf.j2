@@ -22,7 +22,7 @@ table inet filter {
         ip6 nexthdr  icmpv6 accept
 
         # Explicitly allowed inbound ports.
-{% for p in firewall_open_ports %}
+{% for p in hardening_firewall_open_ports %}
         {{ p.proto }} dport {{ p.port }} accept
 {% endfor %}
     }

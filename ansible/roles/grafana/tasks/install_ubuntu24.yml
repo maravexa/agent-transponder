@@ -3,35 +3,35 @@
 
 - name: Add Grafana APT GPG key
   ansible.builtin.apt_key:
-    url:     https://apt.grafana.com/gpg.key
+    url: https://apt.grafana.com/gpg.key
     keyring: /usr/share/keyrings/grafana.gpg
-    state:   present
+    state: present
 
 - name: Add Grafana APT repository
   ansible.builtin.apt_repository:
-    repo:         "deb [signed-by=/usr/share/keyrings/grafana.gpg] https://apt.grafana.com stable main"
-    filename:     grafana
-    state:        present
+    repo: "deb [signed-by=/usr/share/keyrings/grafana.gpg] https://apt.grafana.com stable main"
+    filename: grafana
+    state: present
     update_cache: true
 
 - name: Install Grafana package at pinned version
   ansible.builtin.apt:
-    name:  "grafana"
+    name: "grafana"
     state: present
 
 - name: Add grafana user to flight-recorder supplementary group
   ansible.builtin.user:
-    name:   grafana
+    name: grafana
     groups: "{{ fr_group }}"
     append: true
 
 - name: Create Grafana provisioning subdirectories
   ansible.builtin.file:
-    path:  "{{ item }}"
+    path: "{{ item }}"
     state: directory
     owner: grafana
     group: grafana
-    mode:  "0750"
+    mode: "0750"
   loop:
     - /etc/grafana/provisioning/datasources
     - /etc/grafana/provisioning/dashboards

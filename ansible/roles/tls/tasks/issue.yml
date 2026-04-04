@@ -1,56 +1,56 @@
 ---
 - name: Create per-service TLS directory
   ansible.builtin.file:
-    path:  "{{ fr_tls_dir }}/{{ item.name }}"
+    path: "{{ fr_tls_dir }}/{{ item.name }}"
     state: directory
     owner: root
     group: "{{ fr_group }}"
-    mode:  "0750"
+    mode: "0750"
   loop: "{{ tls_services }}"
 
 - name: Generate service private key (EC secp384r1)
   community.crypto.openssl_privatekey:
-    path:  "{{ fr_tls_dir }}/{{ item.name }}/key.pem"
-    type:  ECC
+    path: "{{ fr_tls_dir }}/{{ item.name }}/key.pem"
+    type: ECC
     curve: "{{ tls_key_curve }}"
     owner: root
     group: "{{ fr_group }}"
-    mode:  "0640"
+    mode: "0640"
     force: false
   loop: "{{ tls_services }}"
 
 - name: Generate service certificate signing request
   community.crypto.openssl_csr:
-    path:            "{{ fr_tls_dir }}/{{ item.name }}/csr.pem"
+    path: "{{ fr_tls_dir }}/{{ item.name }}/csr.pem"
     privatekey_path: "{{ fr_tls_dir }}/{{ item.name }}/key.pem"
-    common_name:     "{{ item.name }}.flight-recorder"
+    common_name: "{{ item.name }}.flight-recorder"
     subject_alt_name: >-
       {{ item.sans | map('regex_replace', '^(.+)$', 'DNS:\1') | list
          + item.sans | map('regex_replace', '^(.+)$', 'IP:\1')
            | select('match', '^IP:[0-9]') | list }}
     owner: root
     group: root
-    mode:  "0600"
+    mode: "0600"
   loop: "{{ tls_services }}"
 
 - name: Sign service certificate with internal CA
   community.crypto.x509_certificate:
-    path:                   "{{ fr_tls_dir }}/{{ item.name }}/cert.pem"
-    csr_path:               "{{ fr_tls_dir }}/{{ item.name }}/csr.pem"
-    ownca_path:             "{{ tls_ca_cert }}"
-    ownca_privatekey_path:  "{{ tls_ca_key }}"
-    provider:               ownca
-    ownca_not_after:        "+{{ tls_cert_validity_days }}d"
+    path: "{{ fr_tls_dir }}/{{ item.name }}/cert.pem"
+    csr_path: "{{ fr_tls_dir }}/{{ item.name }}/csr.pem"
+    ownca_path: "{{ tls_ca_cert }}"
+    ownca_privatekey_path: "{{ tls_ca_key }}"
+    provider: ownca
+    ownca_not_after: "+{{ tls_cert_validity_days }}d"
     owner: root
     group: "{{ fr_group }}"
-    mode:  "0644"
+    mode: "0644"
     force: false
   loop: "{{ tls_services }}"
 
 - name: Ensure service key ownership is correct
   ansible.builtin.file:
-    path:  "{{ fr_tls_dir }}/{{ item.name }}/key.pem"
+    path: "{{ fr_tls_dir }}/{{ item.name }}/key.pem"
     owner: "{{ item.user }}"
     group: "{{ fr_group }}"
-    mode:  "0600"
+    mode: "0600"
   loop: "{{ tls_services }}"

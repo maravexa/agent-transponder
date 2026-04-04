@@ -15,9 +15,9 @@
 
 - name: Copy ingester binary to target
   ansible.builtin.copy:
-    src:   "{{ fr_dist_dir }}/ingester"
-    dest:  "{{ fr_bin_dir }}/ingester"
+    src: "{{ fr_dist_dir }}/ingester"
+    dest: "{{ fr_bin_dir }}/ingester"
     owner: root
     group: "{{ fr_group }}"
-    mode:  "0755"
-  notify: restart ingester
+    mode: "0755"
+  notify: Restart ingester

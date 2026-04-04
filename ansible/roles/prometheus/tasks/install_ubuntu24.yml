@@ -11,22 +11,22 @@
 
 - name: Add prometheus user to flight-recorder supplementary group
   ansible.builtin.user:
-    name:   prometheus
+    name: prometheus
     groups: "{{ fr_group }}"
     append: true
 
 - name: Create /etc/prometheus directory
   ansible.builtin.file:
-    path:  /etc/prometheus
+    path: /etc/prometheus
     state: directory
     owner: prometheus
     group: prometheus
-    mode:  "0750"
+    mode: "0750"
 
 - name: Create Prometheus data directory
   ansible.builtin.file:
-    path:  /var/lib/prometheus
+    path: /var/lib/prometheus
     state: directory
     owner: prometheus
     group: prometheus
-    mode:  "0750"
+    mode: "0750"

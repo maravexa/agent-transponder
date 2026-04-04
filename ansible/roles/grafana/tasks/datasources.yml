@@ -21,4 +21,4 @@
     owner: grafana
     group: grafana
     mode: "0640"
-  notify: restart grafana
+  notify: Restart grafana

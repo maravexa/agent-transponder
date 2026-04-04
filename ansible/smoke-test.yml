@@ -150,11 +150,11 @@
           ══════════════════════════════════════
           Smoke Test PASSED
           ══════════════════════════════════════
-          Ingester:         healthy (gRPC :8443, health :8081, metrics :8082)
-          Analyzer:         healthy (HTTPS :8420)
+          Ingester: healthy (gRPC :8443, health :8081, metrics :8082)
+          Analyzer: healthy (HTTPS :8420)
           Metrics Exporter: healthy (HTTPS :8430)
-          Prometheus:       healthy (HTTPS :9090)
-          Grafana:          healthy (HTTPS :3000)
+          Prometheus: healthy (HTTPS :9090)
+          Grafana: healthy (HTTPS :3000)
           Node Exporter:    healthy (HTTP :9100)
           ──────────────────────────────────────
           NOTE: Full pipeline test (send event → analyze → export)

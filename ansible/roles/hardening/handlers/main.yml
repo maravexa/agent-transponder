@@ -1,12 +1,12 @@
 ---
 - name: Restart ssh
   ansible.builtin.service:
-    name:  ssh
+    name: ssh
     state: restarted
 
 - name: Reload nftables
   ansible.builtin.service:
-    name:  nftables
+    name: nftables
     state: reloaded
 
 - name: Apply sysctl settings
@@ -16,5 +16,5 @@
 
 - name: Restart auditd
   ansible.builtin.service:
-    name:  auditd
+    name: auditd
     state: restarted

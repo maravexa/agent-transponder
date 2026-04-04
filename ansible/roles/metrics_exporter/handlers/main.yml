@@ -1,5 +1,5 @@
 ---
-- name: restart metrics-exporter
+- name: Restart metrics-exporter
   ansible.builtin.systemd:
     name: fr-metrics-exporter
     state: restarted
