@@ -21,11 +21,13 @@ scrape_configs:
           - "localhost:{{ prometheus_listen_port }}"
 
   - job_name: "node_exporter"
-    scheme: https
+    scheme: {{ prometheus_node_exporter_scheme | default('http') }}
+{% if prometheus_node_exporter_scheme | default('http') == 'https' %}
     tls_config:
       ca_file:   {{ tls_ca_cert }}
       cert_file: {{ fr_tls_dir }}/prometheus/cert.pem
       key_file:  {{ fr_tls_dir }}/prometheus/key.pem
+{% endif %}
     static_configs:
       - targets: {{ prometheus_node_exporter_targets | to_yaml | trim }}
 

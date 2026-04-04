@@ -43,7 +43,7 @@
 
     - name: POST synthetic test event to ingester
       ansible.builtin.uri:
-        url: "https://{{ ansible_default_ipv4.address | default('127.0.0.1') }}:8410/events"
+        url: "https://{{ ansible_default_ipv4.address | default('127.0.0.1') }}:8443/events"
         method: POST
         body_format: json
         body:

@@ -1,0 +1,8 @@
+# policy.yaml — managed by Ansible (ingester role)
+# Manual edits will be overwritten on the next playbook run.
+default_rate_limit:
+  events_per_second: {{ ingester_policy_rate_limit }}
+  burst_size: {{ ingester_policy_burst_size }}
+agent_overrides: {{ ingester_policy_agent_overrides | to_yaml }}
+deny_list: {{ ingester_policy_deny_list | to_yaml }}
+allowed_actions: {{ ingester_policy_allowed_actions | to_yaml }}

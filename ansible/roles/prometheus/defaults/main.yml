@@ -26,6 +26,10 @@ prometheus_node_exporter_targets:
 prometheus_fr_exporter_targets:
   - "localhost:8430"
 
+# Scheme for node_exporter scraping. Use "http" when node_exporter does not
+# support --web.config.file (pre-1.5.0, e.g. Ubuntu 24.04 apt package).
+prometheus_node_exporter_scheme: "http"
+
 # Alert rule thresholds.
 prometheus_alert_ingestion_latency_threshold: 5.0
 prometheus_alert_analyzer_error_rate_threshold: 0.1

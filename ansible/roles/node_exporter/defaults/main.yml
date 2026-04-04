@@ -9,3 +9,7 @@
 # Network binding.
 node_exporter_listen_address: "0.0.0.0"
 node_exporter_listen_port: 9100
+
+# TLS support — requires node_exporter >= 1.5.0 (--web.config.file flag).
+# Set to false when using the Ubuntu 24.04 apt package (pre-1.5.0).
+node_exporter_tls_enabled: false
