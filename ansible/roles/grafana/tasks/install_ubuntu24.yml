@@ -16,7 +16,7 @@
 
 - name: Install Grafana package at pinned version
   ansible.builtin.apt:
-    name:  "grafana={{ grafana_version }}"
+    name:  "grafana"
     state: present
 
 - name: Add grafana user to flight-recorder supplementary group
