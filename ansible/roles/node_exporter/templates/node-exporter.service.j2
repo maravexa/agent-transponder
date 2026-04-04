@@ -1,0 +1,51 @@
+# node_exporter.service — managed by Ansible (node_exporter role)
+# Manual edits will be overwritten on the next playbook run.
+
+[Unit]
+Description=Prometheus Node Exporter
+Documentation=https://github.com/prometheus/node_exporter
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=node_exporter
+Group=node_exporter
+# proc group grants access to /proc with hidepid=2 (set by hardening role).
+SupplementaryGroups=proc
+ExecStart={{ fr_bin_dir }}/node_exporter \
+  --web.listen-address={{ node_exporter_listen_address }}:{{ node_exporter_listen_port }} \
+  --web.config.file={{ fr_config_dir }}/node_exporter-web.yml \
+  --collector.systemd \
+  --collector.processes \
+  --no-collector.wifi \
+  --no-collector.infiniband
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=node-exporter
+
+# Hardening — deny privilege escalation and isolate the process.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+RestrictRealtime=true
+LockPersonality=true
+
+# node_exporter reads /proc and /sys for metrics — these are implicitly accessible
+# with the proc supplementary group. Config and TLS certs are read-only.
+ReadOnlyPaths={{ fr_config_dir }} {{ fr_tls_dir }}
+
+# No capabilities needed (listening on non-privileged port).
+CapabilityBoundingSet=
+
+[Install]
+WantedBy=multi-user.target

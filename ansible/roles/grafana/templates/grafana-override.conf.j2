@@ -1,0 +1,27 @@
+# grafana-server.service drop-in — managed by Ansible (grafana role)
+# Adds systemd sandboxing directives on top of the package-installed unit.
+# Manual edits will be overwritten on the next playbook run.
+
+[Service]
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+RestrictRealtime=true
+LockPersonality=true
+
+# Grafana writes its SQLite database, dashboards cache, and plugin state here.
+ReadWritePaths=/var/lib/grafana
+
+# Configs and TLS certs are read-only.
+ReadOnlyPaths=/etc/grafana {{ fr_tls_dir }}
+
+# Keep only the capability needed to bind to the configured port.
+# If grafana_listen_port >= 1024, this can be set to empty.
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE

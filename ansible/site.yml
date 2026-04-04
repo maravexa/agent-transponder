@@ -7,13 +7,13 @@
     - hardening
     - tls
 
-# Prometheus and Grafana roles go here — existing roles, plug in when integrating.
-# - name: Monitoring stack
-#   hosts: monitoring
-#   become: true
-#   roles:
-#     - prometheus
-#     - grafana
+- name: Monitoring stack
+  hosts: monitoring
+  become: true
+  roles:
+    - prometheus
+    - grafana
+    - node_exporter
 
 # Application service roles — Phase 2c.
 - name: Flight recorder services

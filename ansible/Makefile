@@ -45,3 +45,22 @@ build-all:
 ## smoke-test: Run end-to-end smoke test against the dev inventory.
 smoke-test:
 	ansible-playbook ansible/smoke-test.yml -i ansible/inventory/dev/hosts.yml
+
+## download-monitoring: Print download URLs for Prometheus and node_exporter binaries.
+##   The Ansible roles download these automatically via get_url with checksum verification.
+##   Use this target to manually pre-fetch tarballs or to retrieve checksums for defaults.
+##   Usage: PROMETHEUS_VERSION=2.53.0 NODE_EXPORTER_VERSION=1.8.1 make download-monitoring
+PROMETHEUS_VERSION     ?= 2.53.0
+NODE_EXPORTER_VERSION  ?= 1.8.1
+
+download-monitoring:
+	@echo "Prometheus $(PROMETHEUS_VERSION):"
+	@echo "  https://github.com/prometheus/prometheus/releases/download/v$(PROMETHEUS_VERSION)/prometheus-$(PROMETHEUS_VERSION).linux-amd64.tar.gz"
+	@echo "  Checksum: https://github.com/prometheus/prometheus/releases/download/v$(PROMETHEUS_VERSION)/sha256sums.txt"
+	@echo ""
+	@echo "node_exporter $(NODE_EXPORTER_VERSION):"
+	@echo "  https://github.com/prometheus/node_exporter/releases/download/v$(NODE_EXPORTER_VERSION)/node_exporter-$(NODE_EXPORTER_VERSION).linux-amd64.tar.gz"
+	@echo "  Checksum: https://github.com/prometheus/node_exporter/releases/download/v$(NODE_EXPORTER_VERSION)/sha256sums.txt"
+	@echo ""
+	@echo "Update prometheus_checksum and node_exporter_checksum in the respective"
+	@echo "role defaults/main.yml with the sha256 values from the checksum files above."

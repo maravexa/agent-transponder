@@ -41,3 +41,18 @@ tls_services:
     sans:
       - "{{ inventory_hostname }}"
       - "{{ ansible_default_ipv4.address | default('127.0.0.1') }}"
+  - name: prometheus
+    user: prometheus
+    sans:
+      - "{{ inventory_hostname }}"
+      - "{{ ansible_default_ipv4.address | default('127.0.0.1') }}"
+  - name: grafana
+    user: grafana
+    sans:
+      - "{{ inventory_hostname }}"
+      - "{{ ansible_default_ipv4.address | default('127.0.0.1') }}"
+  - name: node_exporter
+    user: node_exporter
+    sans:
+      - "{{ inventory_hostname }}"
+      - "{{ ansible_default_ipv4.address | default('127.0.0.1') }}"

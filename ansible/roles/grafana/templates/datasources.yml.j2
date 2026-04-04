@@ -1,0 +1,24 @@
+---
+# flight-recorder.yml — Grafana datasource provisioning
+# Managed by Ansible (grafana role). Manual edits will be overwritten.
+
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: https://{{ prometheus_target_host }}:{{ prometheus_listen_port }}
+    isDefault: true
+    editable: false
+    jsonData:
+      httpMethod: GET
+      tlsAuth: true
+      tlsAuthWithCACert: true
+    secureJsonData:
+      tlsCACert: |
+        {{ lookup('file', tls_ca_cert) | indent(8) }}
+      tlsClientCert: |
+        {{ lookup('file', fr_tls_dir + '/grafana/cert.pem') | indent(8) }}
+      tlsClientKey: |
+        {{ lookup('file', fr_tls_dir + '/grafana/key.pem') | indent(8) }}

@@ -1,0 +1,9 @@
+---
+- name: Template Grafana Prometheus datasource provisioning
+  ansible.builtin.template:
+    src: datasources.yml.j2
+    dest: /etc/grafana/provisioning/datasources/flight-recorder.yml
+    owner: grafana
+    group: grafana
+    mode: "0640"
+  notify: restart grafana

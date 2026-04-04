@@ -1,0 +1,69 @@
+---
+- name: Create prometheus system group
+  ansible.builtin.group:
+    name: prometheus
+    system: true
+    state: present
+
+- name: Create prometheus system user
+  ansible.builtin.user:
+    name: prometheus
+    group: prometheus
+    groups: "{{ fr_group }}"
+    append: true
+    system: true
+    shell: /usr/sbin/nologin
+    home: /var/lib/prometheus
+    create_home: true
+    comment: Prometheus monitoring system
+
+- name: Download Prometheus tarball
+  ansible.builtin.get_url:
+    url: "https://github.com/prometheus/prometheus/releases/download/v{{ prometheus_version }}/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz"
+    dest: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz"
+    checksum: "{{ prometheus_checksum }}"
+    mode: "0644"
+    owner: root
+    group: root
+
+- name: Extract Prometheus binaries
+  ansible.builtin.unarchive:
+    src: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz"
+    dest: /tmp
+    remote_src: true
+    creates: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64/prometheus"
+
+- name: Install prometheus binary
+  ansible.builtin.copy:
+    src: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64/prometheus"
+    dest: "{{ fr_bin_dir }}/prometheus"
+    remote_src: true
+    owner: root
+    group: "{{ fr_group }}"
+    mode: "0755"
+  notify: restart prometheus
+
+- name: Install promtool binary
+  ansible.builtin.copy:
+    src: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64/promtool"
+    dest: "{{ fr_bin_dir }}/promtool"
+    remote_src: true
+    owner: root
+    group: "{{ fr_group }}"
+    mode: "0755"
+
+- name: Create /etc/prometheus directory
+  ansible.builtin.file:
+    path: /etc/prometheus
+    state: directory
+    owner: prometheus
+    group: prometheus
+    mode: "0750"
+
+- name: Create Prometheus data directory
+  ansible.builtin.file:
+    path: /var/lib/prometheus/data
+    state: directory
+    owner: prometheus
+    group: prometheus
+    mode: "0750"

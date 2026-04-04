@@ -1,0 +1,15 @@
+---
+- name: Install Grafana
+  ansible.builtin.import_tasks: install.yml
+
+- name: Configure Grafana
+  ansible.builtin.import_tasks: configure.yml
+
+- name: Configure Grafana datasources
+  ansible.builtin.import_tasks: datasources.yml
+
+- name: Provision Grafana dashboards
+  ansible.builtin.import_tasks: dashboards.yml
+
+- name: Configure Grafana systemd service
+  ansible.builtin.import_tasks: service.yml

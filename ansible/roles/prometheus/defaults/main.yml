@@ -1,0 +1,35 @@
+---
+# ---------------------------------------------------------------------------
+# prometheus role defaults.
+# Override in group_vars or host_vars as needed.
+# ---------------------------------------------------------------------------
+
+# Binary version and checksum — update together when upgrading.
+# Checksum for prometheus-<version>.linux-amd64.tar.gz from GitHub releases.
+prometheus_version: "2.53.0"
+prometheus_checksum: "sha256:FIXME_REPLACE_WITH_ACTUAL_CHECKSUM"
+
+# Network binding.
+prometheus_listen_address: "0.0.0.0"
+prometheus_listen_port: 9090
+
+# Scrape and evaluation intervals.
+prometheus_scrape_interval: "15s"
+prometheus_eval_interval: "15s"
+
+# Time-series retention period.
+prometheus_retention: "30d"
+
+# File descriptor limit for the prometheus process.
+prometheus_limit_nofile: 65536
+
+# Scrape targets — override per environment in group_vars.
+prometheus_node_exporter_targets:
+  - "localhost:9100"
+
+prometheus_fr_exporter_targets:
+  - "localhost:8430"
+
+# Alert rule thresholds.
+prometheus_alert_ingestion_latency_threshold: 5.0
+prometheus_alert_analyzer_error_rate_threshold: 0.1

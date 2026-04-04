@@ -1,20 +1,27 @@
 ---
 # ---------------------------------------------------------------------------
-# Vars for the monitoring group (Prometheus + Grafana nodes).
-# These are stubs — populate when integrating existing prometheus/grafana roles.
+# Vars for the monitoring group (Prometheus + Grafana + node_exporter nodes).
 # ---------------------------------------------------------------------------
 
-# Prometheus listen address and scrape targets are configured in the
-# prometheus role (already exists — not created here).
-# prometheus_listen_addr: "0.0.0.0:9090"
+# Prometheus configuration.
+prometheus_listen_port: 9090
+prometheus_scrape_interval: "15s"
+prometheus_eval_interval: "15s"
+prometheus_retention: "30d"
 
-# Grafana listen port and admin credentials.
-# grafana_listen_port: 3000
-# grafana_admin_user: admin
-# grafana_admin_password: "{{ vault_grafana_admin_password }}"
+# Grafana configuration.
+grafana_listen_port: 3000
+grafana_admin_user: admin
+grafana_admin_password: "{{ vault_grafana_admin_password | default('admin') }}"
+
+# Prometheus datasource target (same host in single-node dev/staging).
+prometheus_target_host: "localhost"
 
 # Ports to open in the firewall for the monitoring group.
-# These are merged with the base firewall_open_ports from the hardening role.
-monitoring_firewall_ports:
-  - { port: 9090, proto: tcp }   # Prometheus
-  - { port: 3000, proto: tcp }   # Grafana
+# This overrides the hardening role default (which only opens SSH).
+# SSH must be included here to avoid being locked out.
+firewall_open_ports:
+  - { port: 22,   proto: tcp, comment: "ssh" }
+  - { port: 9090, proto: tcp, comment: "prometheus" }
+  - { port: 3000, proto: tcp, comment: "grafana" }
+  - { port: 9100, proto: tcp, comment: "node_exporter" }
