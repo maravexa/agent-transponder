@@ -48,6 +48,8 @@ func makeRepeatingSequence(toolNames []string, repetitions int) []*types.Event {
 
 // newLoopDetector creates a detector with the given threshold/window,
 // using the Python reference defaults (min_sequence_len=2, min_repetitions=3).
+//
+//nolint:unparam // threshold is always 3 in tests; kept as a parameter for readability
 func newLoopDetector(threshold, windowSeconds int) *detectors.LoopDetector {
 	return detectors.NewLoopDetector(threshold, windowSeconds)
 }
@@ -164,7 +166,7 @@ func TestLoopDetector_NoLoopInRandomSequence(t *testing.T) {
 func TestLoopDetector_NoLoopWhenToolsVary(t *testing.T) {
 	det := newLoopDetector(3, 0)
 	seq := []string{"alpha", "beta", "gamma", "alpha", "beta", "delta"}
-	var events []*types.Event
+	events := make([]*types.Event, 0, len(seq))
 	for i, name := range seq {
 		events = append(events, toolEvent(fmt.Sprintf("e-%d", i), name, float64(i)))
 	}
@@ -199,7 +201,7 @@ func TestLoopDetector_IgnoresNonToolEvents(t *testing.T) {
 	toolEvents := makeRepeatingSequence([]string{"read", "write"}, 3)
 
 	// Build mixed event list with interleaved prompt events.
-	var events []*types.Event
+	events := make([]*types.Event, 0, len(toolEvents)*2)
 	for i, te := range toolEvents {
 		events = append(events, te)
 		if i%2 == 0 {

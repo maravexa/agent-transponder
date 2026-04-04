@@ -47,9 +47,9 @@ func jaccard(a, b map[string]struct{}) float64 {
 
 // driftSession tracks accumulated prompt state for one session.
 type driftSession struct {
-	prompts         []string // content of each prompt, in order
-	promptIDs       []string // corresponding event IDs
-	emittedFinding  bool     // true once we have emitted a drift finding
+	prompts        []string // content of each prompt, in order
+	promptIDs      []string // corresponding event IDs
+	emittedFinding bool     // true once we have emitted a drift finding
 }
 
 // DriftDetector detects goal drift via Jaccard token similarity between the
@@ -143,7 +143,7 @@ func (d *DriftDetector) Analyze(event *types.Event) ([]analyzer.Finding, error) 
 	avgSim := sumSim / float64(len(drifted))
 
 	// Confidence is inversely proportional to average similarity.
-	confidence := min64(1.0-avgSim+0.1, 1.0)
+	confidence := min(1.0-avgSim+0.1, 1.0)
 
 	totalSubsequent := len(sess.prompts) - 1
 	driftFraction := float64(len(drifted)) / float64(totalSubsequent)
@@ -163,7 +163,7 @@ func (d *DriftDetector) Analyze(event *types.Event) ([]analyzer.Finding, error) 
 			Detector:   d.Name(),
 			Type:       string(types.DetectionGoalDrift),
 			Severity:   string(severity),
-			Confidence: roundF(confidence, 2),
+			Confidence: round2(confidence),
 			Message: fmt.Sprintf(
 				"%d/%d subsequent prompts have Jaccard similarity < %.1f vs. initial prompt (avg=%.2f, min=%.2f)",
 				len(drifted), totalSubsequent, d.similarityThreshold, avgSim, minSim,

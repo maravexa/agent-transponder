@@ -191,7 +191,7 @@ func run(configPath string) error {
 	)
 	pb.RegisterEventIngestionServer(grpcServer, ingServer)
 
-	grpcLis, err := net.Listen("tcp", cfg.Server.ListenAddr)
+	grpcLis, err := (&net.ListenConfig{}).Listen(context.Background(), "tcp", cfg.Server.ListenAddr)
 	if err != nil {
 		return fmt.Errorf("listen %s: %w", cfg.Server.ListenAddr, err)
 	}

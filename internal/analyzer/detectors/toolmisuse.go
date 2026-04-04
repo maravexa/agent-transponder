@@ -93,6 +93,8 @@ func (d *ToolMisuseDetector) Reset() {
 }
 
 // Analyze implements analyzer.Detector.
+//
+//nolint:gocognit // faithful port of tool_misuse.py; extracting sub-functions would obscure the algorithm
 func (d *ToolMisuseDetector) Analyze(event *types.Event) ([]analyzer.Finding, error) {
 	if event.Type != types.EventToolCall || event.ToolCall == nil {
 		return nil, nil
@@ -144,7 +146,7 @@ func (d *ToolMisuseDetector) Analyze(event *types.Event) ([]analyzer.Finding, er
 				}
 			}
 
-			confidence := min64(0.6+float64(len(failures)-d.maxConsecutiveFailures)*0.05, 1.0)
+			confidence := min(0.6+float64(len(failures)-d.maxConsecutiveFailures)*0.05, 1.0)
 			findings = append(findings, analyzer.Finding{
 				ID:         fmt.Sprintf("misuse-storm-%s-%s-%d", event.SessionID, toolName, len(ts.emittedRetryStorm)),
 				SessionID:  event.SessionID,
@@ -154,7 +156,7 @@ func (d *ToolMisuseDetector) Analyze(event *types.Event) ([]analyzer.Finding, er
 				Detector:   d.Name(),
 				Type:       string(types.DetectionToolMisuse),
 				Severity:   string(types.SeverityWarning),
-				Confidence: roundF(confidence, 2),
+				Confidence: round2(confidence),
 				Message: fmt.Sprintf(
 					"Tool '%s' called with identical arguments %d times and failing each time (threshold: %d)",
 					toolName, len(failures), d.maxConsecutiveFailures,
@@ -185,7 +187,7 @@ func (d *ToolMisuseDetector) Analyze(event *types.Event) ([]analyzer.Finding, er
 				if !alreadyStorm {
 					ts.emittedRateDetection = true
 
-					confidence := min64(0.5+failureRate*0.4, 1.0)
+					confidence := min(0.5+failureRate*0.4, 1.0)
 					findings = append(findings, analyzer.Finding{
 						ID:         fmt.Sprintf("misuse-rate-%s-%s", event.SessionID, toolName),
 						SessionID:  event.SessionID,
@@ -195,7 +197,7 @@ func (d *ToolMisuseDetector) Analyze(event *types.Event) ([]analyzer.Finding, er
 						Detector:   d.Name(),
 						Type:       string(types.DetectionToolMisuse),
 						Severity:   string(types.SeverityWarning),
-						Confidence: roundF(confidence, 2),
+						Confidence: round2(confidence),
 						Message: fmt.Sprintf(
 							"Tool '%s' has a %.0f%% failure rate over %d calls (threshold: %.0f%%)",
 							toolName, failureRate*100, total, d.minFailureRate*100,
