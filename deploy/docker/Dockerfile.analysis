@@ -12,6 +12,7 @@ RUN pip install --no-cache-dir pip-tools
 COPY analysis/pyproject.toml analysis/requirements.in ./
 RUN pip-compile \
     --generate-hashes \
+    --allow-unsafe \
     --output-file=requirements.txt \
     requirements.in
 
