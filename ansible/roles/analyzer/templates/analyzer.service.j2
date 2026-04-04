@@ -1,0 +1,43 @@
+# fr-analyzer.service — managed by Ansible (analyzer role)
+# Manual edits will be overwritten on the next playbook run.
+[Unit]
+Description=Flight Recorder Analysis Engine
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User={{ fr_user_analyzer }}
+Group={{ fr_group }}
+SupplementaryGroups={{ fr_group }}
+ExecStart={{ fr_bin_dir }}/analyzer --config {{ fr_config_dir }}/analyzer.yml
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=fr-analyzer
+
+# Sandboxing
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+RestrictRealtime=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+ReadWritePaths={{ fr_data_dir }}/events {{ fr_data_dir }}/findings
+ReadOnlyPaths={{ fr_config_dir }} {{ fr_tls_dir }}
+CapabilityBoundingSet=
+
+# Resource limits
+LimitNOFILE={{ analyzer_limit_nofile }}
+LimitNPROC={{ analyzer_limit_nproc }}
+
+[Install]
+WantedBy=multi-user.target

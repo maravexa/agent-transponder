@@ -1,0 +1,9 @@
+---
+- name: Template metrics-exporter application config
+  ansible.builtin.template:
+    src: exporter.yml.j2
+    dest: "{{ fr_config_dir }}/exporter.yml"
+    owner: "{{ fr_user_exporter }}"
+    group: "{{ fr_group }}"
+    mode: "0640"
+  notify: restart metrics-exporter

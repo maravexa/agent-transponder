@@ -1,0 +1,8 @@
+---
+ingester_listen_address: "0.0.0.0"
+ingester_listen_port: 8410
+ingester_max_file_size_mb: 100
+ingester_rotation_interval: "1h"
+ingester_log_level: "info"
+ingester_limit_nofile: 65536
+ingester_limit_nproc: 512

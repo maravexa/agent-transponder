@@ -11,3 +11,6 @@
     - common
     - hardening
     - tls
+    - ingester
+    - analyzer
+    - metrics_exporter

@@ -16,10 +16,10 @@
 #     - grafana
 
 # Application service roles — Phase 2c.
-# - name: Flight recorder services
-#   hosts: flight_recorder
-#   become: true
-#   roles:
-#     - ingester
-#     - analyzer
-#     - metrics_exporter
+- name: Flight recorder services
+  hosts: flight_recorder
+  become: true
+  roles:
+    - ingester
+    - analyzer
+    - metrics_exporter

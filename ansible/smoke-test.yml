@@ -1,0 +1,113 @@
+---
+# smoke-test.yml — End-to-end validation of the flight recorder stack.
+# Run with: make smoke-test
+# Requires: site.yml (or local.yml) to have been applied successfully first.
+- name: Flight recorder smoke test
+  hosts: flight_recorder
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Query fr-ingester service state
+      ansible.builtin.systemd:
+        name: fr-ingester
+      register: _svc_ingester
+
+    - name: Assert fr-ingester is running
+      ansible.builtin.assert:
+        that: _svc_ingester.status.ActiveState == "active"
+        fail_msg: "fr-ingester is not running (state: {{ _svc_ingester.status.ActiveState }})"
+        success_msg: "fr-ingester is running"
+
+    - name: Query fr-analyzer service state
+      ansible.builtin.systemd:
+        name: fr-analyzer
+      register: _svc_analyzer
+
+    - name: Assert fr-analyzer is running
+      ansible.builtin.assert:
+        that: _svc_analyzer.status.ActiveState == "active"
+        fail_msg: "fr-analyzer is not running (state: {{ _svc_analyzer.status.ActiveState }})"
+        success_msg: "fr-analyzer is running"
+
+    - name: Query fr-metrics-exporter service state
+      ansible.builtin.systemd:
+        name: fr-metrics-exporter
+      register: _svc_exporter
+
+    - name: Assert fr-metrics-exporter is running
+      ansible.builtin.assert:
+        that: _svc_exporter.status.ActiveState == "active"
+        fail_msg: "fr-metrics-exporter is not running (state: {{ _svc_exporter.status.ActiveState }})"
+        success_msg: "fr-metrics-exporter is running"
+
+    - name: POST synthetic test event to ingester
+      ansible.builtin.uri:
+        url: "https://{{ ansible_default_ipv4.address | default('127.0.0.1') }}:8410/events"
+        method: POST
+        body_format: json
+        body:
+          session_id: "smoke-test-{{ ansible_date_time.iso8601 }}"
+          event_type: "tool_call"
+          agent_id: "smoke-test-agent"
+          timestamp: "{{ ansible_date_time.iso8601 }}"
+          data:
+            tool: "smoke_test_tool"
+            input: "ping"
+            output: "pong"
+            latency_ms: 42
+        ca_path: "{{ tls_ca_cert }}"
+        status_code: [200, 201, 202, 204]
+      register: _ingester_response
+
+    - name: Assert ingester accepted the event
+      ansible.builtin.assert:
+        that: _ingester_response.status in [200, 201, 202, 204]
+        fail_msg: "Ingester returned unexpected status {{ _ingester_response.status }}"
+        success_msg: "Ingester accepted event (HTTP {{ _ingester_response.status }})"
+
+    - name: Wait for analyzer to produce a finding (up to 30 seconds)
+      ansible.builtin.find:
+        paths: "{{ fr_data_dir }}/findings"
+        patterns: "*.jsonl"
+        age: "-1m"
+      register: _findings
+      until: _findings.matched > 0
+      retries: 6
+      delay: 5
+
+    - name: Assert at least one finding was produced
+      ansible.builtin.assert:
+        that: _findings.matched > 0
+        fail_msg: "No findings produced in {{ fr_data_dir }}/findings after 30 seconds"
+        success_msg: "Analyzer produced {{ _findings.matched }} finding file(s)"
+
+    - name: GET metrics from exporter (up to 30 seconds)
+      ansible.builtin.uri:
+        url: "https://{{ ansible_default_ipv4.address | default('127.0.0.1') }}:8430/metrics"
+        method: GET
+        ca_path: "{{ tls_ca_cert }}"
+        return_content: true
+      register: _metrics_response
+      until: _metrics_response.status == 200
+      retries: 6
+      delay: 5
+
+    - name: Assert metrics response contains expected namespace
+      ansible.builtin.assert:
+        that: "'flight_recorder_' in _metrics_response.content"
+        fail_msg: "Metrics endpoint did not return flight_recorder_ prefixed metrics"
+        success_msg: "Metrics exporter is serving flight_recorder_ metrics"
+
+    - name: Smoke test summary
+      ansible.builtin.debug:
+        msg:
+          - "============================================"
+          - " Flight Recorder Smoke Test: PASSED"
+          - "============================================"
+          - "  fr-ingester:         running"
+          - "  fr-analyzer:         running"
+          - "  fr-metrics-exporter: running"
+          - "  Event pipeline:      flowing"
+          - "  Metrics endpoint:    exposed"
+          - "============================================"

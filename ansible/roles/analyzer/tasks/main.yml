@@ -1,0 +1,9 @@
+---
+- name: Install analyzer binary
+  ansible.builtin.include_tasks: install.yml
+
+- name: Configure analyzer
+  ansible.builtin.include_tasks: configure.yml
+
+- name: Enable and start analyzer service
+  ansible.builtin.include_tasks: service.yml

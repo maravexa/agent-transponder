@@ -1,0 +1,43 @@
+# fr-ingester.service — managed by Ansible (ingester role)
+# Manual edits will be overwritten on the next playbook run.
+[Unit]
+Description=Flight Recorder Event Ingester
+After=network-online.target
+Wants=network-online.target
+Documentation=https://github.com/{{ lookup('env', 'GITHUB_REPOSITORY') | default('your-org/flight-recorder') }}
+
+[Service]
+Type=simple
+User={{ fr_user_ingester }}
+Group={{ fr_group }}
+ExecStart={{ fr_bin_dir }}/ingester --config {{ fr_config_dir }}/ingester.yml
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=fr-ingester
+
+# Sandboxing
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+RestrictRealtime=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+ReadWritePaths={{ fr_data_dir }}/events
+ReadOnlyPaths={{ fr_config_dir }} {{ fr_tls_dir }}
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+
+# Resource limits
+LimitNOFILE={{ ingester_limit_nofile }}
+LimitNPROC={{ ingester_limit_nproc }}
+
+[Install]
+WantedBy=multi-user.target

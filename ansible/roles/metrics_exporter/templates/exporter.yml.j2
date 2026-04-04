@@ -1,0 +1,16 @@
+# exporter.yml — managed by Ansible (metrics_exporter role)
+# Manual edits will be overwritten on the next playbook run.
+listen:
+  address: "{{ exporter_listen_address }}"
+  port: {{ exporter_listen_port }}
+tls:
+  cert: "{{ fr_tls_dir }}/exporter/cert.pem"
+  key: "{{ fr_tls_dir }}/exporter/key.pem"
+  ca: "{{ fr_tls_dir }}/ca/ca.crt"
+findings:
+  path: "{{ fr_data_dir }}/findings"
+  poll_interval: "{{ exporter_poll_interval }}"
+metrics:
+  namespace: "{{ exporter_metrics_namespace }}"
+logging:
+  level: "{{ exporter_log_level }}"

@@ -1,0 +1,13 @@
+# analysis-plugins.yml — managed by Ansible (analyzer role)
+# Manual edits will be overwritten on the next playbook run.
+plugins:
+  loop_detection:
+    enabled: {{ analyzer_plugin_loop_detection | lower }}
+    threshold: {{ analyzer_loop_threshold }}
+    window_seconds: {{ analyzer_loop_window }}
+  tool_misuse:
+    enabled: {{ analyzer_plugin_tool_misuse | lower }}
+    max_consecutive_failures: {{ analyzer_tool_misuse_max_failures }}
+  goal_drift:
+    enabled: {{ analyzer_plugin_goal_drift | lower }}
+    similarity_threshold: {{ analyzer_drift_similarity_threshold }}

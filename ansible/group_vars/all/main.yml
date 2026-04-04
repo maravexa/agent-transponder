@@ -15,6 +15,11 @@ fr_tls_dir:    /etc/flight-recorder/tls
 fr_data_dir:   /var/lib/flight-recorder
 fr_log_dir:    /var/log/flight-recorder
 
+# Convenience aliases for individual service account names (used in role templates).
+fr_user_ingester: fr-ingester
+fr_user_analyzer: fr-analyzer
+fr_user_exporter: fr-exporter
+
 # Service accounts. Each service runs as its own system user.
 fr_users:
   - name:    fr-ingester

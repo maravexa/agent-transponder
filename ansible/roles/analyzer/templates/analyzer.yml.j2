@@ -1,0 +1,18 @@
+# analyzer.yml — managed by Ansible (analyzer role)
+# Manual edits will be overwritten on the next playbook run.
+listen:
+  address: "{{ analyzer_listen_address }}"
+  port: {{ analyzer_listen_port }}
+tls:
+  cert: "{{ fr_tls_dir }}/analyzer/cert.pem"
+  key: "{{ fr_tls_dir }}/analyzer/key.pem"
+  ca: "{{ fr_tls_dir }}/ca/ca.crt"
+events:
+  path: "{{ fr_data_dir }}/events"
+  poll_interval: "{{ analyzer_poll_interval }}"
+findings:
+  path: "{{ fr_data_dir }}/findings"
+plugins:
+  config: "{{ fr_config_dir }}/analysis-plugins.yml"
+logging:
+  level: "{{ analyzer_log_level }}"
