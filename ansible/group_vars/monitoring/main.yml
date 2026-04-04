@@ -15,12 +15,12 @@ grafana_admin_user: admin
 grafana_admin_password: "{{ vault_grafana_admin_password | default('admin') }}"
 
 # Prometheus datasource target (same host in single-node dev/staging).
-prometheus_target_host: "localhost"
+grafana_prometheus_target_host: "localhost"
 
 # Ports to open in the firewall for the monitoring group.
 # This overrides the hardening role default (which only opens SSH).
 # SSH must be included here to avoid being locked out.
-firewall_open_ports:
+hardening_firewall_open_ports:
   - { port: 22,   proto: tcp, comment: "ssh" }
   - { port: 9090, proto: tcp, comment: "prometheus" }
   - { port: 3000, proto: tcp, comment: "grafana" }

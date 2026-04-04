@@ -15,9 +15,9 @@
 
 - name: Copy analyzer binary to target
   ansible.builtin.copy:
-    src:   "{{ fr_dist_dir }}/analyzer"
-    dest:  "{{ fr_bin_dir }}/analyzer"
+    src: "{{ fr_dist_dir }}/analyzer"
+    dest: "{{ fr_bin_dir }}/analyzer"
     owner: root
     group: "{{ fr_group }}"
-    mode:  "0755"
-  notify: restart analyzer
+    mode: "0755"
+  notify: Restart analyzer

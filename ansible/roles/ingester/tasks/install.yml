@@ -18,4 +18,4 @@
     owner: root
     group: "{{ fr_group }}"
     mode: "0755"
-  notify: restart ingester
+  notify: Restart ingester

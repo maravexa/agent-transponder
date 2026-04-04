@@ -6,7 +6,7 @@
     owner: grafana
     group: grafana
     mode: "0640"
-  notify: restart grafana
+  notify: Restart grafana
 
 - name: Copy dashboard JSON files to provisioning directory
   ansible.builtin.copy:
@@ -16,4 +16,4 @@
     group: grafana
     mode: "0640"
     directory_mode: "0750"
-  notify: restart grafana
+  notify: Restart grafana

@@ -3,7 +3,7 @@
 # Manual edits will be overwritten on the next playbook run.
 
 global:
-  scrape_interval:     {{ prometheus_scrape_interval }}
+  scrape_interval: {{ prometheus_scrape_interval }}
   evaluation_interval: {{ prometheus_eval_interval }}
 
 rule_files:
@@ -13,9 +13,9 @@ scrape_configs:
   - job_name: "prometheus"
     scheme: https
     tls_config:
-      ca_file:   {{ tls_ca_cert }}
+      ca_file: {{ tls_ca_cert }}
       cert_file: {{ fr_tls_dir }}/prometheus/cert.pem
-      key_file:  {{ fr_tls_dir }}/prometheus/key.pem
+      key_file: {{ fr_tls_dir }}/prometheus/key.pem
     static_configs:
       - targets:
           - "localhost:{{ prometheus_listen_port }}"
@@ -24,9 +24,9 @@ scrape_configs:
     scheme: {{ prometheus_node_exporter_scheme | default('http') }}
 {% if prometheus_node_exporter_scheme | default('http') == 'https' %}
     tls_config:
-      ca_file:   {{ tls_ca_cert }}
+      ca_file: {{ tls_ca_cert }}
       cert_file: {{ fr_tls_dir }}/prometheus/cert.pem
-      key_file:  {{ fr_tls_dir }}/prometheus/key.pem
+      key_file: {{ fr_tls_dir }}/prometheus/key.pem
 {% endif %}
     static_configs:
       - targets: {{ prometheus_node_exporter_targets | to_yaml | trim }}
@@ -34,8 +34,8 @@ scrape_configs:
   - job_name: "flight_recorder"
     scheme: https
     tls_config:
-      ca_file:   {{ tls_ca_cert }}
+      ca_file: {{ tls_ca_cert }}
       cert_file: {{ fr_tls_dir }}/prometheus/cert.pem
-      key_file:  {{ fr_tls_dir }}/prometheus/key.pem
+      key_file: {{ fr_tls_dir }}/prometheus/key.pem
     static_configs:
       - targets: {{ prometheus_fr_exporter_targets | to_yaml | trim }}

@@ -6,5 +6,5 @@
     owner: node_exporter
     group: "{{ fr_group }}"
     mode: "0640"
-  notify: restart node_exporter
+  notify: Restart node_exporter
   when: node_exporter_tls_enabled

@@ -3,8 +3,8 @@
 # Managed by Ansible (node_exporter role). Manual edits will be overwritten.
 
 tls_server_config:
-  cert_file:      {{ fr_tls_dir }}/node_exporter/cert.pem
-  key_file:       {{ fr_tls_dir }}/node_exporter/key.pem
+  cert_file: {{ fr_tls_dir }}/node_exporter/cert.pem
+  key_file: {{ fr_tls_dir }}/node_exporter/key.pem
   client_ca_file: {{ tls_ca_cert }}
   # Require client certificates from the internal CA (Prometheus scrapes with its cert).
   client_auth_type: RequireAndVerifyClientCert

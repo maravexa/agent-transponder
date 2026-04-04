@@ -6,7 +6,7 @@
     owner: root
     group: root
     mode: "0644"
-  notify: restart metrics-exporter
+  notify: Restart metrics-exporter
 
 - name: Enable and start fr-metrics-exporter
   ansible.builtin.systemd:

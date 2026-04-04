@@ -6,7 +6,7 @@
     owner: "{{ fr_user_analyzer }}"
     group: "{{ fr_group }}"
     mode: "0640"
-  notify: restart analyzer
+  notify: Restart analyzer
 
 - name: Template analysis plugins config
   ansible.builtin.template:
@@ -15,7 +15,7 @@
     owner: "{{ fr_user_analyzer }}"
     group: "{{ fr_group }}"
     mode: "0640"
-  notify: restart analyzer
+  notify: Restart analyzer
 
 - name: Create findings data directory
   ansible.builtin.file:

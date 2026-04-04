@@ -5,7 +5,7 @@
 # ---------------------------------------------------------------------------
 
 # Package version — must match an available version in the Grafana repo.
-#grafana_version: "11.1.0"
+# grafana_version: "11.1.0"
 
 # Network binding.
 grafana_listen_address: "0.0.0.0"
@@ -25,4 +25,4 @@ grafana_anonymous_auth: false
 grafana_log_level: "info"
 
 # Prometheus datasource target host (where Prometheus listens).
-prometheus_target_host: "localhost"
+grafana_prometheus_target_host: "localhost"

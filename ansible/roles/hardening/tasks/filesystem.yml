@@ -2,40 +2,40 @@
 # Mount /tmp with noexec, nosuid, nodev.
 - name: Add /tmp hardened mount options to fstab
   ansible.builtin.lineinfile:
-    path:   /etc/fstab
+    path: /etc/fstab
     regexp: '^[^#\s]+\s+/tmp\s+'
-    line:   "tmpfs /tmp tmpfs defaults,noexec,nosuid,nodev 0 0"
-    state:  present
+    line: "tmpfs /tmp tmpfs defaults,noexec,nosuid,nodev 0 0"
+    state: present
 
 - name: Remount /tmp with hardened options
   ansible.posix.mount:
-    path:   /tmp
-    src:    tmpfs
+    path: /tmp
+    src: tmpfs
     fstype: tmpfs
-    opts:   defaults,noexec,nosuid,nodev
-    state:  mounted
+    opts: defaults,noexec,nosuid,nodev
+    state: mounted
 
 # Mount /var/tmp with noexec, nosuid, nodev.
 - name: Add /var/tmp hardened mount options to fstab
   ansible.builtin.lineinfile:
-    path:   /etc/fstab
+    path: /etc/fstab
     regexp: '^[^#\s]+\s+/var/tmp\s+'
-    line:   "tmpfs /var/tmp tmpfs defaults,noexec,nosuid,nodev 0 0"
-    state:  present
+    line: "tmpfs /var/tmp tmpfs defaults,noexec,nosuid,nodev 0 0"
+    state: present
 
 - name: Remount /var/tmp with hardened options
   ansible.posix.mount:
-    path:   /var/tmp
-    src:    tmpfs
+    path: /var/tmp
+    src: tmpfs
     fstype: tmpfs
-    opts:   defaults,noexec,nosuid,nodev
-    state:  mounted
+    opts: defaults,noexec,nosuid,nodev
+    state: mounted
 
 # /proc hidepid restricts process visibility to the owning user.
 # NOTE: Takes effect on next reboot (cannot remount /proc safely mid-session).
 - name: Add /proc hidepid=2 to fstab
   ansible.builtin.lineinfile:
-    path:   /etc/fstab
+    path: /etc/fstab
     regexp: '^[^#\s]+\s+/proc\s+'
-    line:   "proc /proc proc defaults,hidepid=2 0 0"
-    state:  present
+    line: "proc /proc proc defaults,hidepid=2 0 0"
+    state: present
