@@ -11,6 +11,10 @@ datasources:
       httpMethod: GET
       tlsAuth: true
       tlsAuthWithCACert: true
-      tlsCACertFile: "{{ tls_ca_cert }}"
-      tlsClientCertFile: "{{ fr_tls_dir }}/grafana/cert.pem"
-      tlsClientKeyFile: "{{ fr_tls_dir }}/grafana/key.pem"
+    secureJsonData:
+      tlsCACert: |
+        {{ _grafana_ca_cert.content | b64decode | indent(8) }}
+      tlsClientCert: |
+        {{ _grafana_client_cert.content | b64decode | indent(8) }}
+      tlsClientKey: |
+        {{ _grafana_client_key.content | b64decode | indent(8) }}
