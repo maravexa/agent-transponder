@@ -1,4 +1,6 @@
-# .golangci.yml — Security-focused Go linting configuration
+# .golangci.yml — Security-focused Go linting configuration (golangci-lint v2)
+version: "2"
+
 run:
   timeout: 5m
   modules-download-mode: readonly
@@ -32,20 +34,20 @@ linters:
     - gocyclo
     - gocognit
 
-linters-settings:
-  gosec:
-    severity: high
-    confidence: medium
-    excludes: []
+  settings:
+    gosec:
+      severity: high
+      confidence: medium
+      excludes: []
 
-  gocyclo:
-    min-complexity: 15
+    gocyclo:
+      min-complexity: 15
 
-  gocognit:
-    min-complexity: 20
+    gocognit:
+      min-complexity: 20
 
-  govet:
-    enable-all: true
+    govet:
+      enable-all: true
 
 issues:
   max-issues-per-linter: 0
