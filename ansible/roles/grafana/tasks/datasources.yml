@@ -1,4 +1,19 @@
 ---
+- name: Read CA cert for Grafana datasource
+  ansible.builtin.slurp:
+    src: "{{ tls_ca_cert }}"
+  register: _grafana_ca_cert
+
+- name: Read Grafana client cert for datasource
+  ansible.builtin.slurp:
+    src: "{{ fr_tls_dir }}/grafana/cert.pem"
+  register: _grafana_client_cert
+
+- name: Read Grafana client key for datasource
+  ansible.builtin.slurp:
+    src: "{{ fr_tls_dir }}/grafana/key.pem"
+  register: _grafana_client_key
+
 - name: Template Grafana Prometheus datasource provisioning
   ansible.builtin.template:
     src: datasources.yml.j2
