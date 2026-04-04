@@ -21,8 +21,6 @@ linters:
     - ineffassign    # Unused assignments
 
     # Code quality
-    - gofmt
-    - goimports
     - misspell
     - unconvert
     - unparam
@@ -59,4 +57,9 @@ linters:
       - path: '\.pb\.go$'
         linters:
           - govet
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
 
