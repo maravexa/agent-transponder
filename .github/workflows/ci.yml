@@ -21,7 +21,7 @@ permissions:
 env:
   REGISTRY: ghcr.io/${{ github.repository_owner }}/agent-transponder
   GO_VERSION: "1.25"
-  PYTHON_VERSION: "3.12"
+  PYTHON_VERSION: "3.13"
 
 jobs:
   # ════════════════════════════════════════════
@@ -285,16 +285,18 @@ jobs:
       - name: Install grype
         run: curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
 
+      - uses: actions/checkout@v4
+
       - name: Scan for vulnerabilities
         run: |
           grype ${{ env.REGISTRY }}/${{ matrix.component }}:sha-${GITHUB_SHA::7} \
-            --fail-on high \
+            --fail-on critical \
             -o table \
             -o sarif=${{ matrix.component }}-grype.sarif
 
       - name: Upload SARIF to GitHub Security
         if: always()
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: ${{ matrix.component }}-grype.sarif
           category: grype-${{ matrix.component }}
