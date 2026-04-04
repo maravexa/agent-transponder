@@ -1,0 +1,22 @@
+---
+# ---------------------------------------------------------------------------
+# Ansible Vault — encrypted secrets.
+#
+# This file is a PLACEHOLDER. Encrypt it before use:
+#   ansible-vault encrypt group_vars/all/vault.yml
+#
+# To edit an encrypted vault:
+#   make ansible-vault-edit
+#   # or directly:
+#   ansible-vault edit group_vars/all/vault.yml
+#
+# Reference vault variables in other var files with the vault_ prefix
+# convention, e.g.:
+#   vault_grafana_admin_password: "changeme"
+#   vault_ingester_hmac_secret: "changeme"
+#
+# ---------------------------------------------------------------------------
+
+# vault_grafana_admin_password: "changeme"
+# vault_ingester_hmac_secret: "changeme"
+# vault_analyzer_api_key: "changeme"

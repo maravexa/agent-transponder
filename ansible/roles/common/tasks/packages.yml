@@ -1,0 +1,5 @@
+---
+- name: Install base system packages
+  ansible.builtin.package:
+    name:  "{{ fr_base_packages }}"
+    state: present

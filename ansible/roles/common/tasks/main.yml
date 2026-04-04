@@ -1,0 +1,12 @@
+---
+- name: Configure system users and groups
+  ansible.builtin.include_tasks: users.yml
+
+- name: Install base packages
+  ansible.builtin.include_tasks: packages.yml
+
+- name: Create project directory tree
+  ansible.builtin.include_tasks: directories.yml
+
+- name: Configure NTP time synchronization
+  ansible.builtin.include_tasks: time.yml

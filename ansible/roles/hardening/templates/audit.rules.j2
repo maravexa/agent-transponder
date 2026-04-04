@@ -1,0 +1,41 @@
+## audit.rules — managed by Ansible (hardening role)
+## Loaded by auditd on startup. Manual edits will be overwritten.
+
+## Remove all existing rules.
+-D
+
+## Set buffer size (increase if events are being dropped).
+-b 8192
+
+## Failure mode: 1 = print a failure message, 2 = kernel panic.
+-f 1
+
+# ---------------------------------------------------------------------------
+# Identity and authentication files
+# ---------------------------------------------------------------------------
+-w /etc/passwd   -p wa -k identity
+-w /etc/shadow   -p wa -k identity
+-w /etc/group    -p wa -k identity
+-w /etc/gshadow  -p wa -k identity
+-w /etc/sudoers  -p wa -k privilege_escalation
+
+# ---------------------------------------------------------------------------
+# SSH daemon configuration
+# ---------------------------------------------------------------------------
+-w /etc/ssh/sshd_config -p wa -k sshd_config
+
+# ---------------------------------------------------------------------------
+# Flight recorder configuration directory
+# ---------------------------------------------------------------------------
+-w {{ fr_config_dir }}/ -p wa -k flight_recorder_config
+
+# ---------------------------------------------------------------------------
+# Privilege escalation via execve with euid=0
+# ---------------------------------------------------------------------------
+-a always,exit -F arch=b64 -S execve -C uid!=euid -F euid=0 -k privilege_escalation
+-a always,exit -F arch=b32 -S execve -C uid!=euid -F euid=0 -k privilege_escalation
+
+# ---------------------------------------------------------------------------
+# Make the configuration immutable (requires reboot to change rules).
+# ---------------------------------------------------------------------------
+-e 2

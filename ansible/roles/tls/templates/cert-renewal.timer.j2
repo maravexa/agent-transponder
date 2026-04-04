@@ -1,0 +1,15 @@
+# cert-renewal.timer — managed by Ansible (tls role)
+[Unit]
+Description=Flight Recorder TLS Certificate Renewal Check — {{ tls_renewal_timer_oncalendar }} timer
+Documentation=man:systemd.timer(5)
+
+[Timer]
+# Run on the configured schedule. Default: weekly (every Monday at 00:00:00).
+OnCalendar={{ tls_renewal_timer_oncalendar }}
+# If a run was missed (e.g. system was off), run immediately on next boot.
+Persistent=true
+# Spread timer activations randomly up to 1 hour to avoid thundering herd.
+RandomizedDelaySec=3600
+
+[Install]
+WantedBy=timers.target

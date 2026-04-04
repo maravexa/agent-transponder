@@ -1,0 +1,46 @@
+---
+# ---------------------------------------------------------------------------
+# tls role defaults.
+# Uses community.crypto modules exclusively — no shell openssl commands.
+# ---------------------------------------------------------------------------
+
+# Key algorithm and curve for CA and service keys.
+tls_key_type:  ECC
+tls_key_curve: secp384r1
+
+# Certificate validity periods (in days).
+tls_ca_validity_days:   3650   # ~10 years
+tls_cert_validity_days: 365    # 1 year
+
+# Trigger renewal when fewer than this many days remain on a service cert.
+tls_renewal_threshold_days: 30
+
+# systemd timer schedule (OnCalendar= format).
+tls_renewal_timer_oncalendar: weekly
+
+# CA key and certificate paths.
+tls_ca_dir:  /etc/flight-recorder/tls/ca
+tls_ca_key:  "{{ tls_ca_dir }}/ca.key"
+tls_ca_cert: "{{ tls_ca_dir }}/ca.crt"
+
+# Signal that this is a self-signed internal CA (used for future expansion).
+tls_self_signed: true
+
+# Services to issue certificates for.
+# Each entry must provide: name (str), user (str), sans (list of strings).
+tls_services:
+  - name: ingester
+    user: fr-ingester
+    sans:
+      - "{{ inventory_hostname }}"
+      - "{{ ansible_default_ipv4.address | default('127.0.0.1') }}"
+  - name: analyzer
+    user: fr-analyzer
+    sans:
+      - "{{ inventory_hostname }}"
+      - "{{ ansible_default_ipv4.address | default('127.0.0.1') }}"
+  - name: exporter
+    user: fr-exporter
+    sans:
+      - "{{ inventory_hostname }}"
+      - "{{ ansible_default_ipv4.address | default('127.0.0.1') }}"

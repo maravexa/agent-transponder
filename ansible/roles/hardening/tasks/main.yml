@@ -1,0 +1,23 @@
+---
+- name: Apply system hardening
+  when: hardening_enabled
+  block:
+    - name: Harden SSH daemon
+      ansible.builtin.include_tasks: sshd.yml
+      when: hardening_sshd_enabled
+
+    - name: Configure nftables firewall
+      ansible.builtin.include_tasks: firewall.yml
+      when: hardening_firewall_enabled
+
+    - name: Apply kernel hardening parameters
+      ansible.builtin.include_tasks: kernel.yml
+      when: hardening_kernel_enabled
+
+    - name: Configure auditd rules
+      ansible.builtin.include_tasks: auditd.yml
+      when: hardening_auditd_enabled
+
+    - name: Harden filesystem mount options
+      ansible.builtin.include_tasks: filesystem.yml
+      when: hardening_filesystem_enabled

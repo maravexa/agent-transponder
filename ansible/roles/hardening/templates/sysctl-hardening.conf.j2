@@ -1,0 +1,38 @@
+# /etc/sysctl.d/99-hardening.conf — managed by Ansible (hardening role)
+# CIS-informed kernel hardening parameters.
+# Manual edits will be overwritten on the next playbook run.
+
+# Disable IPv4 packet forwarding (not a router).
+net.ipv4.ip_forward = 0
+
+# Enable TCP SYN cookie protection against SYN flood attacks.
+net.ipv4.tcp_syncookies = 1
+
+# Disable ICMP redirect acceptance (prevent route table poisoning).
+net.ipv4.conf.all.accept_redirects = 0
+net.ipv4.conf.default.accept_redirects = 0
+net.ipv6.conf.all.accept_redirects = 0
+net.ipv6.conf.default.accept_redirects = 0
+
+# Disable sending ICMP redirects (not a router).
+net.ipv4.conf.all.send_redirects = 0
+net.ipv4.conf.default.send_redirects = 0
+
+# Ignore ICMP broadcast requests (Smurf attack mitigation).
+net.ipv4.icmp_echo_ignore_broadcasts = 1
+
+# Protect against bogus ICMP error responses.
+net.ipv4.icmp_ignore_bogus_error_responses = 1
+
+# Enable reverse path filtering (anti-spoofing).
+net.ipv4.conf.all.rp_filter = 1
+net.ipv4.conf.default.rp_filter = 1
+
+# Restrict dmesg access to root (CAP_SYSLOG).
+kernel.dmesg_restrict = 1
+
+# Hide kernel symbol addresses from non-root users.
+kernel.kptr_restrict = 2
+
+# Enforce full ASLR.
+kernel.randomize_va_space = 2

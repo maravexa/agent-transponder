@@ -1,0 +1,15 @@
+---
+- name: Create flight recorder directory tree
+  ansible.builtin.file:
+    path:  "{{ item }}"
+    state: directory
+    owner: root
+    group: "{{ fr_group }}"
+    mode:  "0750"
+  loop:
+    - "{{ fr_base_dir }}"
+    - "{{ fr_bin_dir }}"
+    - "{{ fr_config_dir }}"
+    - "{{ fr_tls_dir }}"
+    - "{{ fr_data_dir }}"
+    - "{{ fr_log_dir }}"

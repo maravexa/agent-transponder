@@ -1,0 +1,16 @@
+# cert-renewal.service — managed by Ansible (tls role)
+[Unit]
+Description=Flight Recorder TLS Certificate Renewal Check
+Documentation=file:///usr/local/bin/cert-renewal-check.sh
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/cert-renewal-check.sh
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=cert-renewal
+
+# Least privilege: run as root only because ansible-playbook needs it for cert writes.
+User=root
+Group=root

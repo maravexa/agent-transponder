@@ -1,0 +1,46 @@
+---
+- name: Create CA directory with restricted permissions
+  ansible.builtin.file:
+    path:  "{{ tls_ca_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode:  "0700"
+
+- name: Generate CA private key (EC secp384r1)
+  community.crypto.openssl_privatekey:
+    path:  "{{ tls_ca_key }}"
+    type:  ECC
+    curve: "{{ tls_key_curve }}"
+    owner: root
+    group: root
+    mode:  "0600"
+    force: false
+
+- name: Generate CA certificate signing request
+  community.crypto.openssl_csr:
+    path:            "{{ tls_ca_dir }}/ca.csr"
+    privatekey_path: "{{ tls_ca_key }}"
+    common_name:     "Flight Recorder Internal CA"
+    basic_constraints:
+      - "CA:TRUE"
+    basic_constraints_critical: true
+    key_usage:
+      - keyCertSign
+      - cRLSign
+    key_usage_critical: true
+    owner: root
+    group: root
+    mode:  "0600"
+
+- name: Generate self-signed CA certificate
+  community.crypto.x509_certificate:
+    path:            "{{ tls_ca_cert }}"
+    csr_path:        "{{ tls_ca_dir }}/ca.csr"
+    privatekey_path: "{{ tls_ca_key }}"
+    provider:        selfsigned
+    selfsigned_not_after: "+{{ tls_ca_validity_days }}d"
+    owner: root
+    group: root
+    mode:  "0644"
+    force: false

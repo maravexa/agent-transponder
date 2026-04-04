@@ -1,0 +1,43 @@
+# sshd_config — managed by Ansible (hardening role)
+# Manual edits will be overwritten on the next playbook run.
+
+Port {{ hardening_ssh_port }}
+AddressFamily any
+ListenAddress 0.0.0.0
+ListenAddress ::
+
+# Authentication
+PermitRootLogin no
+PasswordAuthentication no
+PubkeyAuthentication yes
+AuthorizedKeysFile .ssh/authorized_keys
+PermitEmptyPasswords no
+ChallengeResponseAuthentication no
+MaxAuthTries 3
+LoginGraceTime 30
+
+# Session security
+X11Forwarding no
+PrintMotd no
+PrintLastLog yes
+TCPKeepAlive yes
+Compression no
+
+# Restrict privilege
+AllowAgentForwarding no
+AllowTcpForwarding no
+GatewayPorts no
+PermitTunnel no
+
+# PAM integration
+UsePAM yes
+
+# Logging
+SyslogFacility AUTH
+LogLevel INFO
+
+# Environment
+AcceptEnv LANG LC_*
+
+# SFTP subsystem
+Subsystem sftp /usr/lib/openssh/sftp-server

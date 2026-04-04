@@ -1,0 +1,37 @@
+#!/usr/sbin/nft -f
+# nftables.conf — managed by Ansible (hardening role)
+# Manual edits will be overwritten on the next playbook run.
+
+flush ruleset
+
+table inet filter {
+    chain input {
+        type filter hook input priority 0; policy drop;
+
+        # Allow loopback traffic.
+        iif lo accept
+
+        # Allow established and related connections.
+        ct state established,related accept
+
+        # Drop invalid packets.
+        ct state invalid drop
+
+        # Allow ICMP (ping) for reachability checks.
+        ip  protocol icmp  accept
+        ip6 nexthdr  icmpv6 accept
+
+        # Explicitly allowed inbound ports.
+{% for p in firewall_open_ports %}
+        {{ p.proto }} dport {{ p.port }} accept
+{% endfor %}
+    }
+
+    chain forward {
+        type filter hook forward priority 0; policy drop;
+    }
+
+    chain output {
+        type filter hook output priority 0; policy accept;
+    }
+}

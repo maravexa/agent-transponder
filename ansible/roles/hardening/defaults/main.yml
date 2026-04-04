@@ -1,0 +1,25 @@
+---
+# ---------------------------------------------------------------------------
+# hardening role defaults.
+# Set hardening_enabled: false in local.yml (or host_vars) to skip entirely.
+# Individual tasks can be toggled without disabling the whole role.
+# ---------------------------------------------------------------------------
+
+# Master switch — set false to skip all hardening tasks.
+hardening_enabled: true
+
+# Per-task toggles.
+hardening_sshd_enabled:       true
+hardening_firewall_enabled:    true
+hardening_kernel_enabled:      true
+hardening_auditd_enabled:      true
+hardening_filesystem_enabled:  true
+
+# SSH daemon settings.
+hardening_ssh_port: 22
+
+# nftables: list of additional ports to allow inbound.
+# Format: { port: <number>, proto: tcp|udp }
+# SSH is always added automatically; extend this list per group/host.
+firewall_open_ports:
+  - { port: "{{ hardening_ssh_port }}", proto: tcp }
