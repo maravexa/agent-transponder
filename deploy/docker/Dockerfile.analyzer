@@ -1,0 +1,38 @@
+# ============================================================
+# Stage 1: Build
+# ============================================================
+FROM golang:1.25-bookworm AS builder
+
+ARG VERSION=dev
+ARG COMMIT=unknown
+ARG BUILD_TIME=unknown
+
+WORKDIR /src
+COPY go.mod go.sum ./
+RUN go mod download && go mod verify
+COPY . .
+
+RUN CGO_ENABLED=0 go build \
+    -trimpath \
+    -ldflags="-s -w -buildid= \
+      -X main.version=${VERSION} \
+      -X main.commit=${COMMIT} \
+      -X main.buildTime=${BUILD_TIME}" \
+    -o /at-analyzer \
+    ./cmd/analyzer/
+
+# ============================================================
+# Stage 2: Runtime — distroless nonroot
+# ============================================================
+FROM gcr.io/distroless/static-debian12:nonroot
+
+LABEL org.opencontainers.image.title="at-analyzer"
+LABEL org.opencontainers.image.description="Agent Transponder Analysis Engine"
+
+COPY --from=builder --chown=65534:65534 /at-analyzer /at-analyzer
+
+# Health + API port
+EXPOSE 8420
+
+USER 65534:65534
+ENTRYPOINT ["/at-analyzer"]

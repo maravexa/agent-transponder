@@ -168,7 +168,7 @@ jobs:
       id-token: write       # Keyless signing via Sigstore
     strategy:
       matrix:
-        component: [ingestion, exporter]
+        component: [ingestion, exporter, analyzer]
     steps:
       - uses: actions/checkout@v4
 
@@ -270,7 +270,7 @@ jobs:
       security-events: read
     strategy:
       matrix:
-        component: [ingestion, exporter]
+        component: [ingestion, exporter, analyzer]
     steps:
       - name: Log in to GHCR
         uses: docker/login-action@v3

@@ -49,6 +49,26 @@ builds:
       - -trimpath
     mod_timestamp: "{{ .CommitTimestamp }}"
 
+  - id: at-analyzer
+    main: ./cmd/analyzer/
+    binary: at-analyzer
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -buildid=
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.buildTime={{.Date}}
+    flags:
+      - -trimpath
+    mod_timestamp: "{{ .CommitTimestamp }}"
+
 archives:
   - id: binaries
     formats: ["tar.gz"]
@@ -138,6 +158,40 @@ dockers:
     extra_files:
       - deploy/docker/passwd
 
+  # Analyzer — linux/amd64
+  - id: analyzer-amd64
+    ids: [at-analyzer]
+    goos: linux
+    goarch: amd64
+    dockerfile: deploy/docker/Dockerfile.goreleaser
+    image_templates:
+      - "ghcr.io/{{ .Env.GITHUB_USER }}/agent-transponder/analyzer:{{ .Version }}-amd64"
+    build_flag_templates:
+      - "--label=org.opencontainers.image.title=at-analyzer"
+      - "--label=org.opencontainers.image.version={{ .Version }}"
+      - "--label=org.opencontainers.image.source={{ .GitURL }}"
+      - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
+      - "--label=org.opencontainers.image.created={{ .Date }}"
+    extra_files:
+      - deploy/docker/passwd
+
+  # Analyzer — linux/arm64
+  - id: analyzer-arm64
+    ids: [at-analyzer]
+    goos: linux
+    goarch: arm64
+    dockerfile: deploy/docker/Dockerfile.goreleaser
+    image_templates:
+      - "ghcr.io/{{ .Env.GITHUB_USER }}/agent-transponder/analyzer:{{ .Version }}-arm64"
+    build_flag_templates:
+      - "--label=org.opencontainers.image.title=at-analyzer"
+      - "--label=org.opencontainers.image.version={{ .Version }}"
+      - "--label=org.opencontainers.image.source={{ .GitURL }}"
+      - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
+      - "--label=org.opencontainers.image.created={{ .Date }}"
+    extra_files:
+      - deploy/docker/passwd
+
 # Multi-arch manifest lists
 docker_manifests:
   - name_template: "ghcr.io/{{ .Env.GITHUB_USER }}/agent-transponder/ingestion:{{ .Version }}"
@@ -159,6 +213,16 @@ docker_manifests:
     image_templates:
       - "ghcr.io/{{ .Env.GITHUB_USER }}/agent-transponder/exporter:{{ .Version }}-amd64"
       - "ghcr.io/{{ .Env.GITHUB_USER }}/agent-transponder/exporter:{{ .Version }}-arm64"
+
+  - name_template: "ghcr.io/{{ .Env.GITHUB_USER }}/agent-transponder/analyzer:{{ .Version }}"
+    image_templates:
+      - "ghcr.io/{{ .Env.GITHUB_USER }}/agent-transponder/analyzer:{{ .Version }}-amd64"
+      - "ghcr.io/{{ .Env.GITHUB_USER }}/agent-transponder/analyzer:{{ .Version }}-arm64"
+
+  - name_template: "ghcr.io/{{ .Env.GITHUB_USER }}/agent-transponder/analyzer:latest"
+    image_templates:
+      - "ghcr.io/{{ .Env.GITHUB_USER }}/agent-transponder/analyzer:{{ .Version }}-amd64"
+      - "ghcr.io/{{ .Env.GITHUB_USER }}/agent-transponder/analyzer:{{ .Version }}-arm64"
 
 # Sign container images
 docker_signs:
