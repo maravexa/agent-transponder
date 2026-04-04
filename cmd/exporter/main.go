@@ -155,7 +155,7 @@ func countLines(path string) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	var count int64
 	scanner := bufio.NewScanner(f)
