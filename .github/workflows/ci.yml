@@ -72,13 +72,13 @@ jobs:
 
       - name: Ruff check + format
         run: |
-          ruff check sdk/ analysis/
-          ruff format --check sdk/ analysis/
+          ruff check sdk/
+          ruff format --check sdk/
 
       - name: Bandit security scan
         run: |
           mkdir -p reports
-          bandit -r sdk/ analysis/ -f json -o reports/bandit.json || true
+          bandit -r sdk/ -f json -o reports/bandit.json || true
 
       - uses: actions/upload-artifact@v4
         if: always()
@@ -141,15 +141,10 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install dependencies
-        run: |
-          pip install -e sdk/[test]
-          pip install -e analysis/[test]
+        run: pip install -e sdk/[test]
 
       - name: Run SDK tests
         run: cd sdk && python -m pytest tests/ -v --tb=short --junitxml=../reports/sdk-tests.xml
-
-      - name: Run analysis tests
-        run: cd analysis && python -m pytest tests/ -v --tb=short --junitxml=../reports/analysis-tests.xml
 
       - uses: actions/upload-artifact@v4
         if: always()
@@ -159,6 +154,8 @@ jobs:
 
   # ════════════════════════════════════════════
   # Stage 3: Build Container Images
+  # TODO: Docker builds are secondary for v0.1.0; Ansible deployment is primary.
+  #       Re-enable and add analyzer image once Docker images are needed for release.
   # ════════════════════════════════════════════
 
   build-images:
@@ -171,7 +168,7 @@ jobs:
       id-token: write       # Keyless signing via Sigstore
     strategy:
       matrix:
-        component: [ingestion, exporter, analysis]
+        component: [ingestion, exporter]
     steps:
       - uses: actions/checkout@v4
 
@@ -273,7 +270,7 @@ jobs:
       security-events: read
     strategy:
       matrix:
-        component: [ingestion, exporter, analysis]
+        component: [ingestion, exporter]
     steps:
       - name: Log in to GHCR
         uses: docker/login-action@v3
@@ -300,6 +297,22 @@ jobs:
         with:
           name: grype-${{ matrix.component }}
           path: ${{ matrix.component }}-grype.sarif
+
+  # ════════════════════════════════════════════
+  # Stage 4b: Ansible Lint
+  # ════════════════════════════════════════════
+
+  lint-ansible:
+    name: Lint Ansible
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ansible-lint
+        run: pip install ansible-lint
+
+      - name: Run ansible-lint
+        run: cd ansible && ansible-lint roles/ site.yml local.yml
 
   # ════════════════════════════════════════════
   # Stage 5: Release (tag push only)
