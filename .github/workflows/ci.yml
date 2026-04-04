@@ -233,9 +233,11 @@ jobs:
 
       - name: Generate SBOM
         if: github.event_name != 'pull_request'
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
         run: |
           mkdir -p sbom
-          syft ${{ env.REGISTRY }}/${{ matrix.component }}:${{ github.sha }} \
+          syft ${{ env.REGISTRY }}/${{ matrix.component }}@${DIGEST} \
             -o spdx-json=sbom/${{ matrix.component }}.spdx.json \
             -o cyclonedx-json=sbom/${{ matrix.component }}.cdx.json
 
