@@ -1,6 +1,8 @@
 module github.com/agent-transponder/agent-transponder
 
-go 1.25
+go 1.24
+
+toolchain go1.24.7
 
 require (
 	github.com/prometheus/client_golang v1.19.1
