@@ -20,7 +20,7 @@ permissions:
 
 env:
   REGISTRY: ghcr.io/${{ github.repository_owner }}/agent-transponder
-  GO_VERSION: "1.23"
+  GO_VERSION: "1.24"
   PYTHON_VERSION: "3.12"
 
 jobs:
