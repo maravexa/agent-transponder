@@ -1,0 +1,11 @@
+# .grype.yaml — grype configuration for Agent Transponder
+#
+# Ignores CVEs that are unfixable in Debian Bookworm base images or are
+# not exploitable given this project's usage of the affected packages.
+
+ignore:
+  - vulnerability: CVE-2025-7458
+    reason: "libsqlite3 is not used by the analysis engine; inherited from python:3.13-slim-bookworm base image, no fix available in Debian Bookworm"
+
+  - vulnerability: CVE-2025-6297
+    reason: "dpkg is removed at build time in Dockerfile.analysis; not present at runtime"
