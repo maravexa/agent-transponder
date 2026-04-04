@@ -48,16 +48,18 @@ linters:
     govet:
       enable-all: true
 
-issues:
+  exclusions:
+    rules:
+      # Allow test files to be less strict
+      - path: _test\.go
+        linters:
+          - gosec
+          - errcheck
+      # Skip fieldalignment checks on generated protobuf files
+      - path: '\.pb\.go$'
+        linters:
+          - govet
+
+output:
   max-issues-per-linter: 0
   max-same-issues: 0
-  exclude-rules:
-    # Allow test files to be less strict
-    - path: _test\.go
-      linters:
-        - gosec
-        - errcheck
-    # Skip fieldalignment checks on generated protobuf files
-    - path: '\.pb\.go$'
-      linters:
-        - govet
