@@ -1,0 +1,16 @@
+---
+- name: Template metrics-exporter systemd unit
+  ansible.builtin.template:
+    src: exporter.service.j2
+    dest: /etc/systemd/system/fr-metrics-exporter.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify: restart metrics-exporter
+
+- name: Enable and start fr-metrics-exporter
+  ansible.builtin.systemd:
+    name: fr-metrics-exporter
+    enabled: true
+    state: started
+    daemon_reload: true

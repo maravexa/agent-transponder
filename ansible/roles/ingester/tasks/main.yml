@@ -1,0 +1,9 @@
+---
+- name: Install ingester binary
+  ansible.builtin.include_tasks: install.yml
+
+- name: Configure ingester
+  ansible.builtin.include_tasks: configure.yml
+
+- name: Enable and start ingester service
+  ansible.builtin.include_tasks: service.yml

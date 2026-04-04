@@ -1,0 +1,26 @@
+---
+- name: Template analyzer application config
+  ansible.builtin.template:
+    src: analyzer.yml.j2
+    dest: "{{ fr_config_dir }}/analyzer.yml"
+    owner: "{{ fr_user_analyzer }}"
+    group: "{{ fr_group }}"
+    mode: "0640"
+  notify: restart analyzer
+
+- name: Template analysis plugins config
+  ansible.builtin.template:
+    src: analysis-plugins.yml.j2
+    dest: "{{ fr_config_dir }}/analysis-plugins.yml"
+    owner: "{{ fr_user_analyzer }}"
+    group: "{{ fr_group }}"
+    mode: "0640"
+  notify: restart analyzer
+
+- name: Create findings data directory
+  ansible.builtin.file:
+    path: "{{ fr_data_dir }}/findings"
+    state: directory
+    owner: "{{ fr_user_analyzer }}"
+    group: "{{ fr_group }}"
+    mode: "0750"

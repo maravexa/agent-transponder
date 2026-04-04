@@ -1,0 +1,42 @@
+# fr-metrics-exporter.service — managed by Ansible (metrics_exporter role)
+# Manual edits will be overwritten on the next playbook run.
+[Unit]
+Description=Flight Recorder Metrics Exporter
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User={{ fr_user_exporter }}
+Group={{ fr_group }}
+SupplementaryGroups={{ fr_group }}
+ExecStart={{ fr_bin_dir }}/metrics-exporter --config {{ fr_config_dir }}/exporter.yml
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=fr-metrics-exporter
+
+# Sandboxing
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+RestrictRealtime=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+ReadOnlyPaths={{ fr_config_dir }} {{ fr_tls_dir }} {{ fr_data_dir }}/findings
+CapabilityBoundingSet=
+
+# Resource limits
+LimitNOFILE={{ exporter_limit_nofile }}
+LimitNPROC={{ exporter_limit_nproc }}
+
+[Install]
+WantedBy=multi-user.target

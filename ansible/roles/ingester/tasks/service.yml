@@ -1,0 +1,16 @@
+---
+- name: Template ingester systemd unit
+  ansible.builtin.template:
+    src: ingester.service.j2
+    dest: /etc/systemd/system/fr-ingester.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify: restart ingester
+
+- name: Enable and start fr-ingester
+  ansible.builtin.systemd:
+    name: fr-ingester
+    enabled: true
+    state: started
+    daemon_reload: true

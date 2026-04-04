@@ -1,0 +1,16 @@
+---
+analyzer_listen_address: "0.0.0.0"
+analyzer_listen_port: 8420
+analyzer_poll_interval: "5s"
+analyzer_log_level: "info"
+analyzer_limit_nofile: 65536
+analyzer_limit_nproc: 512
+
+# Plugin defaults
+analyzer_plugin_loop_detection: true
+analyzer_loop_threshold: 5
+analyzer_loop_window: 300
+analyzer_plugin_tool_misuse: true
+analyzer_tool_misuse_max_failures: 3
+analyzer_plugin_goal_drift: true
+analyzer_drift_similarity_threshold: 0.7

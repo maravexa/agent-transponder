@@ -1,0 +1,8 @@
+---
+exporter_listen_address: "0.0.0.0"
+exporter_listen_port: 8430
+exporter_poll_interval: "10s"
+exporter_metrics_namespace: "flight_recorder"
+exporter_log_level: "info"
+exporter_limit_nofile: 65536
+exporter_limit_nproc: 256

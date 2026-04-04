@@ -1,0 +1,15 @@
+# ingester.yml — managed by Ansible (ingester role)
+# Manual edits will be overwritten on the next playbook run.
+listen:
+  address: "{{ ingester_listen_address }}"
+  port: {{ ingester_listen_port }}
+tls:
+  cert: "{{ fr_tls_dir }}/ingester/cert.pem"
+  key: "{{ fr_tls_dir }}/ingester/key.pem"
+  ca: "{{ fr_tls_dir }}/ca/ca.crt"
+storage:
+  path: "{{ fr_data_dir }}/events"
+  max_file_size_mb: {{ ingester_max_file_size_mb }}
+  rotation_interval: "{{ ingester_rotation_interval }}"
+logging:
+  level: "{{ ingester_log_level }}"

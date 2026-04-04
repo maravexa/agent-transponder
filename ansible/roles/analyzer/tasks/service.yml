@@ -1,0 +1,16 @@
+---
+- name: Template analyzer systemd unit
+  ansible.builtin.template:
+    src: analyzer.service.j2
+    dest: /etc/systemd/system/fr-analyzer.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify: restart analyzer
+
+- name: Enable and start fr-analyzer
+  ansible.builtin.systemd:
+    name: fr-analyzer
+    enabled: true
+    state: started
+    daemon_reload: true

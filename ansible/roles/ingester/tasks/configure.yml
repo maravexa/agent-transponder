@@ -1,0 +1,17 @@
+---
+- name: Template ingester application config
+  ansible.builtin.template:
+    src: ingester.yml.j2
+    dest: "{{ fr_config_dir }}/ingester.yml"
+    owner: "{{ fr_user_ingester }}"
+    group: "{{ fr_group }}"
+    mode: "0640"
+  notify: restart ingester
+
+- name: Create events data directory
+  ansible.builtin.file:
+    path: "{{ fr_data_dir }}/events"
+    state: directory
+    owner: "{{ fr_user_ingester }}"
+    group: "{{ fr_group }}"
+    mode: "0750"
