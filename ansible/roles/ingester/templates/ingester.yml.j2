@@ -1,15 +1,36 @@
 # ingester.yml — managed by Ansible (ingester role)
 # Manual edits will be overwritten on the next playbook run.
-listen:
-  address: "{{ ingester_listen_address }}"
-  port: {{ ingester_listen_port }}
+server:
+  listen_addr: "{{ ingester_listen_addr }}"
+  health_addr: "{{ ingester_health_addr }}"
+  metrics_addr: "{{ ingester_metrics_addr }}"
 tls:
-  cert: "{{ fr_tls_dir }}/ingester/cert.pem"
-  key: "{{ fr_tls_dir }}/ingester/key.pem"
-  ca: "{{ fr_tls_dir }}/ca/ca.crt"
-storage:
+  ca_path: "{{ tls_ca_cert }}"
+  cert_path: "{{ fr_tls_dir }}/ingester/cert.pem"
+  key_path: "{{ fr_tls_dir }}/ingester/key.pem"
+event_store:
   path: "{{ fr_data_dir }}/events"
-  max_file_size_mb: {{ ingester_max_file_size_mb }}
-  rotation_interval: "{{ ingester_rotation_interval }}"
+audit:
+  path: "{{ fr_data_dir }}/audit/audit.jsonl"
+analysis:
+  addr: "{{ ingester_analysis_addr }}"
+  batch_size: {{ ingester_analysis_batch_size }}
+  flush_interval: "{{ ingester_analysis_flush_interval }}"
+  circuit_breaker_threshold: {{ ingester_analysis_cb_threshold }}
+  circuit_breaker_cooldown: "{{ ingester_analysis_cb_cooldown }}"
+  tls_enabled: {{ ingester_analysis_tls_enabled | lower }}
+  ca_path: "{{ tls_ca_cert }}"
+  cert_path: "{{ fr_tls_dir }}/ingester/cert.pem"
+  key_path: "{{ fr_tls_dir }}/ingester/key.pem"
+retention:
+  default_ttl: "{{ ingester_retention_ttl }}"
+  check_interval: "{{ ingester_retention_check_interval }}"
+redaction:
+  custom_patterns: {{ ingester_redaction_patterns | to_yaml }}
+policy:
+  config_path: "{{ fr_config_dir }}/policy.yaml"
+agents:
+{{ ingester_agents | to_nice_yaml(indent=2) | indent(2, false) }}
 logging:
+  format: "{{ ingester_log_format }}"
   level: "{{ ingester_log_level }}"

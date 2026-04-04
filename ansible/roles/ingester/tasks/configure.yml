@@ -8,9 +8,26 @@
     mode: "0640"
   notify: restart ingester
 
+- name: Template policy config
+  ansible.builtin.template:
+    src: policy.yaml.j2
+    dest: "{{ fr_config_dir }}/policy.yaml"
+    owner: "{{ fr_user_ingester }}"
+    group: "{{ fr_group }}"
+    mode: "0640"
+  notify: restart ingester
+
 - name: Create events data directory
   ansible.builtin.file:
     path: "{{ fr_data_dir }}/events"
+    state: directory
+    owner: "{{ fr_user_ingester }}"
+    group: "{{ fr_group }}"
+    mode: "0750"
+
+- name: Create audit data directory
+  ansible.builtin.file:
+    path: "{{ fr_data_dir }}/audit"
     state: directory
     owner: "{{ fr_user_ingester }}"
     group: "{{ fr_group }}"

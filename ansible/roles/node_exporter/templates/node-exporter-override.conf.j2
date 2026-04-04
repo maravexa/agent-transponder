@@ -8,11 +8,13 @@ Group=node_exporter
 # proc group grants access to /proc with hidepid=2 (set by hardening role).
 SupplementaryGroups=proc
 
-# Clear and reset ExecStart to apply our custom flags (TLS web config).
+# Clear and reset ExecStart to apply our custom flags.
 ExecStart=
 ExecStart=/usr/bin/prometheus-node-exporter \
   --web.listen-address={{ node_exporter_listen_address }}:{{ node_exporter_listen_port }} \
+{% if node_exporter_tls_enabled %}
   --web.config.file={{ fr_config_dir }}/node_exporter-web.yml \
+{% endif %}
   --collector.systemd \
   --collector.processes \
   --no-collector.wifi \

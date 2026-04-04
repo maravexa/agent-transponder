@@ -6,11 +6,11 @@ analyzer_log_level: "info"
 analyzer_limit_nofile: 65536
 analyzer_limit_nproc: 512
 
-# Plugin defaults
+# Plugin defaults — aligned with Go LoadPluginsConfig defaults
 analyzer_plugin_loop_detection: true
-analyzer_loop_threshold: 5
+analyzer_loop_threshold: 3        # Go default: 3
 analyzer_loop_window: 300
 analyzer_plugin_tool_misuse: true
-analyzer_tool_misuse_max_failures: 3
+analyzer_tool_misuse_max_failures: 5   # Go default: 5
 analyzer_plugin_goal_drift: true
-analyzer_drift_similarity_threshold: 0.7
+analyzer_drift_similarity_threshold: 0.3  # Go default: 0.3 (Jaccard)

@@ -1,8 +1,40 @@
 ---
-ingester_listen_address: "0.0.0.0"
-ingester_listen_port: 8410
-ingester_max_file_size_mb: 100
-ingester_rotation_interval: "1h"
+# --- Server ---
+ingester_listen_addr: ":8443"
+ingester_health_addr: ":8081"
+ingester_metrics_addr: ":8082"  # NOT 9090 — conflicts with Prometheus
+
+# --- Analysis forwarding ---
+ingester_analysis_addr: "localhost:8420"
+ingester_analysis_batch_size: 50
+ingester_analysis_flush_interval: "5s"
+ingester_analysis_cb_threshold: 5
+ingester_analysis_cb_cooldown: "30s"
+ingester_analysis_tls_enabled: true
+
+# --- Retention ---
+ingester_retention_ttl: "72h"
+ingester_retention_check_interval: "1h"
+
+# --- Redaction ---
+ingester_redaction_patterns: []
+
+# --- Agents (HMAC keys — override in vault) ---
+ingester_agents:
+  default-agent:
+    hmac_key: "{{ vault_default_agent_hmac_key | default('CHANGE-ME-IN-VAULT') }}"
+
+# --- Policy ---
+ingester_policy_rate_limit: 100.0
+ingester_policy_burst_size: 500
+ingester_policy_agent_overrides: {}
+ingester_policy_deny_list: []
+ingester_policy_allowed_actions: {}
+
+# --- Logging ---
+ingester_log_format: "json"
 ingester_log_level: "info"
+
+# --- Process limits ---
 ingester_limit_nofile: 65536
 ingester_limit_nproc: 512

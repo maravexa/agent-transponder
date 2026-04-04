@@ -84,8 +84,14 @@ func (s *subsystems) close() {
 }
 
 // initSubsystems initializes all infrastructure components in dependency order.
-func initSubsystems(cfg *Config, logger *slog.Logger) (*subsystems, error) {
+// On any error, all successfully initialized subsystems are closed before returning.
+func initSubsystems(cfg *Config, logger *slog.Logger) (_ *subsystems, retErr error) {
 	s := &subsystems{}
+	defer func() {
+		if retErr != nil {
+			s.close()
+		}
+	}()
 
 	hmacKeys := buildHMACKeyMap(cfg.Agents, logger)
 	idProvider, err := identity.NewTLSProvider(identity.TLSProviderConfig{
@@ -99,43 +105,42 @@ func initSubsystems(cfg *Config, logger *slog.Logger) (*subsystems, error) {
 	}
 	s.idProvider = idProvider
 
-	s.store, err = eventstore.NewJSONLStore(cfg.EventStore.Path)
+	store, err := eventstore.NewJSONLStore(cfg.EventStore.Path)
 	if err != nil {
-		s.close()
 		return nil, fmt.Errorf("init event store: %w", err)
 	}
+	s.store = store
 
-	s.auditSink, err = audit.NewHashChainSink(cfg.Audit.Path)
+	auditSink, err := audit.NewHashChainSink(cfg.Audit.Path)
 	if err != nil {
-		s.close()
 		return nil, fmt.Errorf("init audit sink: %w", err)
 	}
+	s.auditSink = auditSink
 
 	kekBytes, err := buildKEK()
 	if err != nil {
-		s.close()
 		return nil, fmt.Errorf("derive kek: %w", err)
 	}
-	s.km, err = keymanager.NewLocalManager(keymanager.LocalManagerConfig{
+	km, err := keymanager.NewLocalManager(keymanager.LocalManagerConfig{
 		KEK:       kekBytes,
 		StorePath: cfg.EventStore.Path + "/keystore.json",
 	})
 	if err != nil {
-		s.close()
 		return nil, fmt.Errorf("init key manager: %w", err)
 	}
+	s.km = km
 
-	s.policyEng, err = policy.NewConfigEngine(cfg.Policy.ConfigPath)
+	policyEng, err := policy.NewConfigEngine(cfg.Policy.ConfigPath)
 	if err != nil {
-		s.close()
 		return nil, fmt.Errorf("init policy engine: %w", err)
 	}
+	s.policyEng = policyEng
 
-	s.redactor, err = redaction.NewRegexRedactor(buildRedactionPatterns(cfg, logger))
+	redactor, err := redaction.NewRegexRedactor(buildRedactionPatterns(cfg, logger))
 	if err != nil {
-		s.close()
 		return nil, fmt.Errorf("init redactor: %w", err)
 	}
+	s.redactor = redactor
 
 	s.reg = prometheus.NewRegistry()
 	s.collector = metrics.NewCollector(s.reg)
