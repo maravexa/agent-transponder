@@ -62,8 +62,8 @@
 
     - name: Verify flight_recorder metrics are present
       ansible.builtin.assert:
-        that: "'flight_recorder_' in _exporter_metrics.content"
-        fail_msg: "Exporter metrics endpoint not serving flight_recorder_ metrics"
+        that: "'agent_transponder_' in _exporter_metrics.content"
+        fail_msg: "Exporter metrics endpoint not serving agent_transponder_ metrics"
 
     # ── Prometheus ────────────────────────────────────────────────────────────
     # Prometheus web.yml sets client_auth_type: RequireAndVerifyClientCert.
