@@ -19,7 +19,6 @@ linters:
     - staticcheck    # Comprehensive static analysis
     - errcheck       # Unchecked errors
     - ineffassign    # Unused assignments
-    - typecheck       # Type checking
 
     # Code quality
     - gofmt
