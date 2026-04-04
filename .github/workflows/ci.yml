@@ -284,11 +284,9 @@ jobs:
       - name: Install grype
         uses: anchore/scan-action/download-grype@v4
 
-      - name: Update grype DB
-        run: grype db update
-
       - name: Scan for vulnerabilities
         run: |
+          grype db update
           grype ${{ env.REGISTRY }}/${{ matrix.component }}:sha-${GITHUB_SHA::7} \
             --fail-on high \
             -o sarif > ${{ matrix.component }}-grype.sarif
