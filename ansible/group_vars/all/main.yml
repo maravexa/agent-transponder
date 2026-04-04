@@ -1,0 +1,45 @@
+---
+# ---------------------------------------------------------------------------
+# Flight Recorder — shared variables applied to all hosts.
+# Override in group_vars/<group>/main.yml or host_vars/<host>.yml as needed.
+# ---------------------------------------------------------------------------
+
+# System group that owns shared directories and resources.
+fr_group: flight-recorder
+
+# Directory layout.
+fr_base_dir:   /opt/flight-recorder
+fr_bin_dir:    /opt/flight-recorder/bin
+fr_config_dir: /etc/flight-recorder
+fr_tls_dir:    /etc/flight-recorder/tls
+fr_data_dir:   /var/lib/flight-recorder
+fr_log_dir:    /var/log/flight-recorder
+
+# Service accounts. Each service runs as its own system user.
+fr_users:
+  - name:    fr-ingester
+    home:    /opt/flight-recorder/ingester
+    comment: "Flight Recorder Ingestion Service"
+  - name:    fr-analyzer
+    home:    /opt/flight-recorder/analyzer
+    comment: "Flight Recorder Analysis Service"
+  - name:    fr-exporter
+    home:    /opt/flight-recorder/exporter
+    comment: "Flight Recorder Metrics Exporter"
+
+# Base OS packages required on every node.
+fr_base_packages:
+  - curl
+  - tar
+  - gzip
+  - jq
+  - chrony
+  - rsync
+  - unzip
+
+# NTP servers used by the common/time role.
+common_ntp_servers:
+  - 0.pool.ntp.org
+  - 1.pool.ntp.org
+  - 2.pool.ntp.org
+  - 3.pool.ntp.org

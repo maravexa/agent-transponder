@@ -1,0 +1,20 @@
+---
+# ---------------------------------------------------------------------------
+# Vars for the monitoring group (Prometheus + Grafana nodes).
+# These are stubs — populate when integrating existing prometheus/grafana roles.
+# ---------------------------------------------------------------------------
+
+# Prometheus listen address and scrape targets are configured in the
+# prometheus role (already exists — not created here).
+# prometheus_listen_addr: "0.0.0.0:9090"
+
+# Grafana listen port and admin credentials.
+# grafana_listen_port: 3000
+# grafana_admin_user: admin
+# grafana_admin_password: "{{ vault_grafana_admin_password }}"
+
+# Ports to open in the firewall for the monitoring group.
+# These are merged with the base firewall_open_ports from the hardening role.
+monitoring_firewall_ports:
+  - { port: 9090, proto: tcp }   # Prometheus
+  - { port: 3000, proto: tcp }   # Grafana

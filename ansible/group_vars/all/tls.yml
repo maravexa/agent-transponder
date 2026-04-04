@@ -1,0 +1,43 @@
+---
+# ---------------------------------------------------------------------------
+# TLS / PKI configuration — shared across all hosts.
+# These are consumed by the tls role.
+# ---------------------------------------------------------------------------
+
+# Key algorithm and curve for all generated keys (CA and service certs).
+tls_key_type:  ECC
+tls_key_curve: secp384r1
+
+# Certificate validity periods.
+tls_ca_validity_days:   3650   # ~10 years for internal CA
+tls_cert_validity_days: 365    # 1 year for service certs
+
+# Renewal: check and reissue when fewer than this many days remain.
+tls_renewal_threshold_days: 30
+
+# systemd timer schedule for the renewal check (OnCalendar= format).
+tls_renewal_timer_oncalendar: weekly
+
+# CA storage paths.
+tls_ca_dir:  /etc/flight-recorder/tls/ca
+tls_ca_key:  "{{ tls_ca_dir }}/ca.key"
+tls_ca_cert: "{{ tls_ca_dir }}/ca.crt"
+
+# Service certificates to issue. Each entry generates a key + cert pair.
+# SANs are evaluated at playbook runtime against inventory facts.
+tls_services:
+  - name: ingester
+    user: fr-ingester
+    sans:
+      - "{{ inventory_hostname }}"
+      - "{{ ansible_default_ipv4.address | default('127.0.0.1') }}"
+  - name: analyzer
+    user: fr-analyzer
+    sans:
+      - "{{ inventory_hostname }}"
+      - "{{ ansible_default_ipv4.address | default('127.0.0.1') }}"
+  - name: exporter
+    user: fr-exporter
+    sans:
+      - "{{ inventory_hostname }}"
+      - "{{ ansible_default_ipv4.address | default('127.0.0.1') }}"

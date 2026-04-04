@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# cert-renewal-check.sh — managed by Ansible (tls role)
+# Checks expiry of all service certificates and triggers reissue when
+# fewer than {{ tls_renewal_threshold_days }} days remain.
+#
+# Runs as a systemd oneshot service on the schedule defined in
+# cert-renewal.timer. Requires ansible-playbook to be on PATH.
+
+set -euo pipefail
+
+THRESHOLD_DAYS={{ tls_renewal_threshold_days }}
+TLS_BASE={{ fr_tls_dir }}
+ANSIBLE_DIR={{ ansible_dir | default('/opt/flight-recorder/ansible') }}
+PLAYBOOK="${ANSIBLE_DIR}/site.yml"
+INVENTORY="${ANSIBLE_DIR}/inventory/{{ ansible_environment | default('dev') }}"
+RENEWED=0
+
+for cert in "${TLS_BASE}"/*/cert.pem; do
+    [[ -f "$cert" ]] || continue
+
+    service_dir=$(dirname "$cert")
+    service_name=$(basename "$service_dir")
+
+    expiry=$(openssl x509 -enddate -noout -in "$cert" 2>/dev/null | cut -d= -f2)
+    if [[ -z "$expiry" ]]; then
+        logger -t cert-renewal -p daemon.warn "Cannot read expiry from ${cert}, skipping"
+        continue
+    fi
+
+    expiry_epoch=$(date -d "$expiry" +%s)
+    now_epoch=$(date +%s)
+    days_left=$(( (expiry_epoch - now_epoch) / 86400 ))
+
+    if (( days_left < THRESHOLD_DAYS )); then
+        logger -t cert-renewal -p daemon.notice \
+            "Certificate for ${service_name} expires in ${days_left} days — triggering reissue"
+        RENEWED=1
+    else
+        logger -t cert-renewal -p daemon.info \
+            "Certificate for ${service_name} OK (${days_left} days remaining)"
+    fi
+done
+
+if (( RENEWED )); then
+    logger -t cert-renewal -p daemon.notice "Running ansible-playbook to reissue certificates"
+    ansible-playbook \
+        -i "${INVENTORY}" \
+        --tags tls \
+        "${PLAYBOOK}" \
+        >> /var/log/flight-recorder/cert-renewal.log 2>&1
+    logger -t cert-renewal -p daemon.notice "Certificate reissue complete"
+fi

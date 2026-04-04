@@ -1,0 +1,9 @@
+---
+- name: Generate internal CA key and certificate
+  ansible.builtin.include_tasks: ca.yml
+
+- name: Issue service TLS certificates
+  ansible.builtin.include_tasks: issue.yml
+
+- name: Deploy TLS certificate renewal timer
+  ansible.builtin.include_tasks: renewal.yml

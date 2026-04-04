@@ -1,0 +1,25 @@
+---
+- name: Base configuration
+  hosts: all
+  become: true
+  roles:
+    - common
+    - hardening
+    - tls
+
+# Prometheus and Grafana roles go here — existing roles, plug in when integrating.
+# - name: Monitoring stack
+#   hosts: monitoring
+#   become: true
+#   roles:
+#     - prometheus
+#     - grafana
+
+# Application service roles — Phase 2c.
+# - name: Flight recorder services
+#   hosts: flight_recorder
+#   become: true
+#   roles:
+#     - ingester
+#     - analyzer
+#     - metrics_exporter

@@ -1,0 +1,18 @@
+---
+- name: Create flight-recorder system group
+  ansible.builtin.group:
+    name: "{{ fr_group }}"
+    system: true
+    state: present
+
+- name: Create flight recorder service accounts
+  ansible.builtin.user:
+    name:        "{{ item.name }}"
+    group:       "{{ fr_group }}"
+    home:        "{{ item.home }}"
+    comment:     "{{ item.comment }}"
+    shell:       /sbin/nologin
+    system:      true
+    create_home: true
+    state:       present
+  loop: "{{ fr_users }}"

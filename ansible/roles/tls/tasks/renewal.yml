@@ -1,0 +1,36 @@
+---
+- name: Deploy certificate renewal check script
+  ansible.builtin.template:
+    src:   renewal-check.sh.j2
+    dest:  /usr/local/bin/cert-renewal-check.sh
+    owner: root
+    group: root
+    mode:  "0755"
+
+- name: Deploy cert-renewal systemd service unit
+  ansible.builtin.template:
+    src:   cert-renewal.service.j2
+    dest:  /etc/systemd/system/cert-renewal.service
+    owner: root
+    group: root
+    mode:  "0644"
+  notify: Reload systemd daemon
+
+- name: Deploy cert-renewal systemd timer unit
+  ansible.builtin.template:
+    src:   cert-renewal.timer.j2
+    dest:  /etc/systemd/system/cert-renewal.timer
+    owner: root
+    group: root
+    mode:  "0644"
+  notify: Reload systemd daemon
+
+- name: Flush handlers so systemd daemon is reloaded before enabling timer
+  ansible.builtin.meta: flush_handlers
+
+- name: Enable and start cert-renewal timer
+  ansible.builtin.systemd:
+    name:          cert-renewal.timer
+    enabled:       true
+    state:         started
+    daemon_reload: false

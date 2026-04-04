@@ -1,0 +1,13 @@
+---
+# One-command dev bootstrap. Targets localhost, hardening disabled by default.
+- name: Local dev bootstrap
+  hosts: localhost
+  connection: local
+  become: true
+  vars:
+    hardening_enabled: false
+    tls_self_signed: true
+  roles:
+    - common
+    - hardening
+    - tls

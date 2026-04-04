@@ -1,0 +1,20 @@
+---
+- name: Restart sshd
+  ansible.builtin.service:
+    name:  sshd
+    state: restarted
+
+- name: Reload nftables
+  ansible.builtin.service:
+    name:  nftables
+    state: reloaded
+
+- name: Apply sysctl settings
+  ansible.builtin.command:
+    cmd: sysctl --system
+  changed_when: false
+
+- name: Restart auditd
+  ansible.builtin.service:
+    name:  auditd
+    state: restarted

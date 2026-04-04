@@ -1,0 +1,9 @@
+---
+collections:
+  # OpenSSL operations: openssl_privatekey, openssl_csr, x509_certificate, etc.
+  - name: community.crypto
+    version: ">=2.0.0"
+
+  # Filesystem operations: ansible.posix.mount for remounting /tmp and /var/tmp.
+  - name: ansible.posix
+    version: ">=1.0.0"

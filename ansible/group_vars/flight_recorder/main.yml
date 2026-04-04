@@ -1,0 +1,30 @@
+---
+# ---------------------------------------------------------------------------
+# Vars for the flight_recorder group (ingester, analyzer, exporter nodes).
+# Application service roles are Phase 2c — these are stubs.
+# ---------------------------------------------------------------------------
+
+# Binary artifact directory on the controller (relative to repo root).
+fr_dist_dir: "{{ playbook_dir }}/../dist"
+
+# Ingestion API listen addresses.
+# fr_ingester_listen_addr: "0.0.0.0:8443"
+# fr_ingester_health_addr: "0.0.0.0:8081"
+# fr_ingester_metrics_addr: "0.0.0.0:9090"
+
+# Analysis engine gRPC address.
+# fr_analyzer_grpc_addr: "0.0.0.0:50051"
+
+# Metrics exporter listen address.
+# fr_exporter_listen_addr: "0.0.0.0:9091"
+
+# HMAC shared secret (vault-encrypted in production).
+# fr_ingester_hmac_secret: "{{ vault_ingester_hmac_secret }}"
+
+# Ports to open in the firewall for flight recorder nodes.
+fr_firewall_ports:
+  - { port: 8443, proto: tcp }   # Ingestion API (mTLS)
+  - { port: 8081, proto: tcp }   # Ingestion health check
+  - { port: 9090, proto: tcp }   # Ingestion metrics
+  - { port: 50051, proto: tcp }  # Analysis gRPC
+  - { port: 9091, proto: tcp }   # Exporter metrics
