@@ -36,7 +36,7 @@ ansible-check:
 build-all:
 	@mkdir -p dist
 	@echo "Building ingester..."
-	CGO_ENABLED=0 GOOS=linux go build -o dist/ingester ./cmd/ingester
+	CGO_ENABLED=0 GOOS=linux go build -o dist/ingester ./cmd/ingestion
 	@echo "Building analyzer..."
 	CGO_ENABLED=0 GOOS=linux go build -o dist/analyzer ./cmd/analyzer
 	@echo "Building metrics-exporter..."
