@@ -445,6 +445,16 @@ type Event struct {
 	Model      string            `protobuf:"bytes,20,opt,name=model,proto3" json:"model,omitempty"`
 	TokenUsage *TokenUsage       `protobuf:"bytes,21,opt,name=token_usage,json=tokenUsage,proto3" json:"token_usage,omitempty"`
 	Labels     map[string]string `protobuf:"bytes,22,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// Causal attribution — populated by framework integrations.
+	// run_id identifies this specific execution unit (LLM call, tool call, chain).
+	// parent_run_id links to the enclosing execution unit, forming a tree.
+	// Together they enable run-tree reconstruction for replay and
+	// failure-cascade analysis.
+	RunId       string `protobuf:"bytes,25,opt,name=run_id,json=runId,proto3" json:"run_id,omitempty"`
+	ParentRunId string `protobuf:"bytes,26,opt,name=parent_run_id,json=parentRunId,proto3" json:"parent_run_id,omitempty"`
+	// Framework-supplied tags for filtering and routing.
+	// Preserved from the source framework (e.g. LangChain tags).
+	Tags []string `protobuf:"bytes,27,rep,name=tags,proto3" json:"tags,omitempty"`
 	// Integrity
 	Hmac          string `protobuf:"bytes,30,opt,name=hmac,proto3" json:"hmac,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -596,6 +606,27 @@ func (x *Event) GetTokenUsage() *TokenUsage {
 func (x *Event) GetLabels() map[string]string {
 	if x != nil {
 		return x.Labels
+	}
+	return nil
+}
+
+func (x *Event) GetRunId() string {
+	if x != nil {
+		return x.RunId
+	}
+	return ""
+}
+
+func (x *Event) GetParentRunId() string {
+	if x != nil {
+		return x.ParentRunId
+	}
+	return ""
+}
+
+func (x *Event) GetTags() []string {
+	if x != nil {
+		return x.Tags
 	}
 	return nil
 }
@@ -1072,7 +1103,7 @@ const file_proto_agenttransponder_v1_events_proto_rawDesc = "" +
 	"\aversion\x18\x01 \x01(\tR\aversion\x12;\n" +
 	"\vserver_time\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
 	"serverTime\x12%\n" +
-	"\x0eagent_identity\x18\x03 \x01(\tR\ragentIdentity\"\x9e\a\n" +
+	"\x0eagent_identity\x18\x03 \x01(\tR\ragentIdentity\"\xed\a\n" +
 	"\x05Event\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
 	"\n" +
@@ -1093,7 +1124,10 @@ const file_proto_agenttransponder_v1_events_proto_rawDesc = "" +
 	"\x05model\x18\x14 \x01(\tR\x05model\x12@\n" +
 	"\vtoken_usage\x18\x15 \x01(\v2\x1f.agenttransponder.v1.TokenUsageR\n" +
 	"tokenUsage\x12>\n" +
-	"\x06labels\x18\x16 \x03(\v2&.agenttransponder.v1.Event.LabelsEntryR\x06labels\x12\x12\n" +
+	"\x06labels\x18\x16 \x03(\v2&.agenttransponder.v1.Event.LabelsEntryR\x06labels\x12\x15\n" +
+	"\x06run_id\x18\x19 \x01(\tR\x05runId\x12\"\n" +
+	"\rparent_run_id\x18\x1a \x01(\tR\vparentRunId\x12\x12\n" +
+	"\x04tags\x18\x1b \x03(\tR\x04tags\x12\x12\n" +
 	"\x04hmac\x18\x1e \x01(\tR\x04hmac\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +

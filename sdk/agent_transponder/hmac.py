@@ -8,10 +8,13 @@ from __future__ import annotations
 import hashlib
 import hmac as _hmac
 import json
+import logging
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .events import Event
+
+logger = logging.getLogger(__name__)
 
 
 def _canonical_json(event: "Event") -> bytes:
@@ -33,6 +36,8 @@ def sign_event(event: "Event", key: bytes) -> str:
     """
     payload = _canonical_json(event)
     digest = _hmac.new(key, payload, hashlib.sha256).hexdigest()
+    logger.debug("SIGN canonical: %s", payload.decode())
+    logger.debug("SIGN hmac: %s", digest)
     event.hmac = digest
     return digest
 

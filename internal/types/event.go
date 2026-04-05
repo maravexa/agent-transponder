@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"time"
 )
 
@@ -199,6 +200,8 @@ func (e *Event) ComputeHMAC(key []byte) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("remarshal sorted for hmac: %w", err)
 	}
+
+	slog.Debug("HMAC canonical JSON", "json", string(canonical), "event_id", e.ID)
 
 	mac := hmac.New(sha256.New, key)
 	mac.Write(canonical)
