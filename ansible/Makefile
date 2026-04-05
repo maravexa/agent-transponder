@@ -4,7 +4,7 @@
 ANSIBLE_PLAYBOOK ?= site.yml
 ENV              ?= dev
 
-.PHONY: ansible-deps ansible-local ansible-deploy ansible-lint ansible-vault-edit ansible-check
+.PHONY: ansible-deps ansible-local ansible-deploy ansible-lint ansible-vault-edit ansible-check proto-python
 
 ## ansible-deps: Install required Ansible collections (community.crypto, ansible.posix).
 ansible-deps:
@@ -31,6 +31,19 @@ ansible-vault-edit:
 ##   Usage: make ansible-check ENV=staging
 ansible-check:
 	cd ansible && ansible-playbook $(ANSIBLE_PLAYBOOK) -i inventory/$(ENV) --check --diff
+
+## proto-python: Generate Python gRPC stubs from proto/agenttransponder/v1/events.proto.
+##   Requires grpcio-tools: pip install grpcio-tools
+proto-python:
+	@mkdir -p sdk/agent_transponder/agenttransponder/v1
+	@touch sdk/agent_transponder/agenttransponder/__init__.py
+	@touch sdk/agent_transponder/agenttransponder/v1/__init__.py
+	python -m grpc_tools.protoc \
+		-Iproto \
+		--python_out=sdk/agent_transponder \
+		--grpc_python_out=sdk/agent_transponder \
+		agenttransponder/v1/events.proto
+	@echo "Python proto stubs generated in sdk/agent_transponder/agenttransponder/v1/"
 
 ## build-all: Build all Go binaries to dist/ (required before ansible-deploy or ansible-local).
 build-all:

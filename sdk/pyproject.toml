@@ -18,7 +18,7 @@ test = ["pytest>=8"]
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["agent_transponder*"]
+include = ["agent_transponder*", "agenttransponder*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

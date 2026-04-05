@@ -30,7 +30,10 @@ redaction:
 policy:
   config_path: "{{ fr_config_dir }}/policy.yaml"
 agents:
-{{ ingester_agents | to_nice_yaml(indent=2) | indent(2, false) }}
+{% for agent_name, agent_cfg in ingester_agents.items() %}
+  {{ agent_name }}:
+    hmac_key: "{{ agent_cfg.hmac_key }}"
+{% endfor %}
 logging:
   format: "{{ ingester_log_format }}"
   level: "{{ ingester_log_level }}"

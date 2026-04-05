@@ -172,15 +172,31 @@ type Detection struct {
 
 // ComputeHMAC calculates the HMAC-SHA256 for this event.
 // The HMAC field itself is excluded from the computation.
+//
+// Keys are sorted alphabetically in the canonical JSON to ensure
+// cross-language compatibility — the Python SDK uses json.dumps(sort_keys=True).
+// Go's json.Marshal on map[string]interface{} sorts keys alphabetically,
+// matching Python's sort_keys=True.
 func (e *Event) ComputeHMAC(key []byte) (string, error) {
 	// Temporarily clear HMAC to compute over the rest
 	savedHMAC := e.HMAC
 	e.HMAC = ""
 	defer func() { e.HMAC = savedHMAC }()
 
-	canonical, err := json.Marshal(e)
+	// Round-trip through map[string]interface{} to produce sorted keys.
+	// This is required for cross-language HMAC compatibility — the Python
+	// SDK uses json.dumps(sort_keys=True) as its canonical form.
+	raw, err := json.Marshal(e)
 	if err != nil {
 		return "", fmt.Errorf("marshal for hmac: %w", err)
+	}
+	var m map[string]interface{}
+	if err := json.Unmarshal(raw, &m); err != nil {
+		return "", fmt.Errorf("unmarshal for hmac sort: %w", err)
+	}
+	canonical, err := json.Marshal(m)
+	if err != nil {
+		return "", fmt.Errorf("remarshal sorted for hmac: %w", err)
 	}
 
 	mac := hmac.New(sha256.New, key)

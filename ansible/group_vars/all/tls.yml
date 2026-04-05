@@ -56,3 +56,9 @@ tls_services:
     sans:
       - "{{ inventory_hostname }}"
       - "{{ ansible_default_ipv4.address | default('127.0.0.1') }}"
+  # SDK client certificate — used by the Python SDK and demo agents.
+  # CN: sdk-client  O: flight-recorder  (client auth, no SANs needed)
+  # Owner is configurable; default root so the cert can be copied to agent hosts.
+  - name: sdk
+    user: "{{ tls_sdk_cert_owner | default('root') }}"
+    sans: []

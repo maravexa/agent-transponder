@@ -154,7 +154,7 @@ def _define_tools():
 
 def run_loop_scenario(handler, session) -> int:
     """Repeat the same tool call 7 times to trigger the loop detector."""
-    from langchain_community.llms import FakeListLLM
+    from langchain_core.language_models import FakeListChatModel
 
     print(f"\n{_bold('Scenario 1: Task Loop Detection')}")
     print(
@@ -173,7 +173,7 @@ def run_loop_scenario(handler, session) -> int:
         "One more price check on PROD-001 to be safe.",
         "Final verification of PROD-001 pricing.",
     ]
-    llm = FakeListLLM(responses=llm_responses)
+    llm = FakeListChatModel(responses=llm_responses)
 
     event_count = 0
     iterations = 7
@@ -182,7 +182,7 @@ def run_loop_scenario(handler, session) -> int:
         step = f"[{i + 1}/{iterations}]"
 
         # LLM invocation
-        result = llm.invoke("Check pricing for PROD-001", config={"callbacks": [handler]})
+        result = llm.invoke("Check pricing for PROD-001", config={"callbacks": [handler]}).content
         print(f'  \u251c\u2500 {step} LLM -> "{result[:50]}"')
         event_count += 2  # prompt + response
 
@@ -207,7 +207,7 @@ def run_loop_scenario(handler, session) -> int:
 
 def run_misuse_scenario(handler, session) -> int:
     """Generate 4 consecutive tool failures then 1 success."""
-    from langchain_community.llms import FakeListLLM
+    from langchain_core.language_models import FakeListChatModel
 
     print(f"\n{_bold('Scenario 2: Tool Misuse Detection')}")
     print(
@@ -224,7 +224,7 @@ def run_misuse_scenario(handler, session) -> int:
         "One more try with INVALID-004...",
         "Let me try a valid product this time: PROD-042.",
     ]
-    llm = FakeListLLM(responses=llm_responses)
+    llm = FakeListChatModel(responses=llm_responses)
 
     event_count = 0
     invalid_ids = ["INVALID-001", "INVALID-002", "INVALID-003", "INVALID-004"]
@@ -233,7 +233,7 @@ def run_misuse_scenario(handler, session) -> int:
     for i, pid in enumerate(invalid_ids):
         step = f"[{i + 1}/{len(invalid_ids) + 1}]"
 
-        result = llm.invoke(f"Look up inventory for {pid}", config={"callbacks": [handler]})
+        result = llm.invoke(f"Look up inventory for {pid}", config={"callbacks": [handler]}).content
         print(f'  \u251c\u2500 {step} LLM -> "{result[:50]}"')
         event_count += 2  # prompt + response
 
@@ -247,7 +247,7 @@ def run_misuse_scenario(handler, session) -> int:
 
     # One successful call for contrast
     step = f"[5/{len(invalid_ids) + 1}]"
-    result = llm.invoke("Look up inventory for PROD-042", config={"callbacks": [handler]})
+    result = llm.invoke("Look up inventory for PROD-042", config={"callbacks": [handler]}).content
     print(f'  \u251c\u2500 {step} LLM -> "{result[:50]}"')
     event_count += 2
 
@@ -274,7 +274,7 @@ def run_misuse_scenario(handler, session) -> int:
 
 def run_drift_scenario(handler, session) -> int:
     """Gradually shift prompts away from the original topic."""
-    from langchain_community.llms import FakeListLLM
+    from langchain_core.language_models import FakeListChatModel
 
     print(f"\n{_bold('Scenario 3: Goal Drift Detection')}")
     print(
@@ -303,7 +303,7 @@ def run_drift_scenario(handler, session) -> int:
         "Pacific maritime trade routes have a fascinating history.",
         "Here are some excellent books on naval exploration.",
     ]
-    llm = FakeListLLM(responses=llm_responses)
+    llm = FakeListChatModel(responses=llm_responses)
 
     # Interleave some tool calls to make the scenario richer
     tool_calls = {
@@ -319,7 +319,7 @@ def run_drift_scenario(handler, session) -> int:
         step = f"[{i + 1}/{total}]"
 
         # Send the prompt through the LLM
-        result = llm.invoke(prompt, config={"callbacks": [handler]})
+        result = llm.invoke(prompt, config={"callbacks": [handler]}).content
         print(f'  \u251c\u2500 {step} Prompt: "{prompt[:55]}..."')
         event_count += 2  # prompt + response
 

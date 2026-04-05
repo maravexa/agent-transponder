@@ -20,6 +20,15 @@ fr_dist_dir: "{{ playbook_dir }}/../dist"
 # HMAC shared secret (vault-encrypted in production).
 # fr_ingester_hmac_secret: "{{ vault_ingester_hmac_secret }}"
 
+# Ingester agents with HMAC keys (base64-encoded; Go ingester decodes at startup).
+# Production: override ingester_agents in host_vars/<host>.yml using vault secrets.
+# Dev/demo: the sdk-demo key matches the langchain_demo.py default ("demo-hmac-key" base64).
+ingester_agents:
+  default-agent:
+    hmac_key: "{{ vault_default_agent_hmac_key | default('CHANGE-ME-IN-VAULT') }}"
+  sdk-demo:
+    hmac_key: "ZGVtby1obWFjLWtleQ=="  # base64("demo-hmac-key") — demo only, change in production
+
 # Ports to open in the firewall for flight recorder nodes.
 # Variable name must be hardening_firewall_open_ports — that is what nftables.conf.j2 iterates.
 hardening_firewall_open_ports:
