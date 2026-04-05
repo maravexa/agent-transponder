@@ -47,7 +47,8 @@ func TestComputeHMACSortedKeys(t *testing.T) {
 	e.HMAC = saved
 
 	var m map[string]interface{}
-	if err := json.Unmarshal(raw, &m); err != nil {
+	err = json.Unmarshal(raw, &m)
+	if err != nil {
 		t.Fatalf("json.Unmarshal error: %v", err)
 	}
 	delete(m, "hmac") // Must match ComputeHMAC which excludes the hmac field
