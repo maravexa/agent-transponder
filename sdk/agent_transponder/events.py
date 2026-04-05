@@ -178,9 +178,9 @@ class TokenUsage:
 def _ser_prompt(p: PromptData) -> dict:
     """Serialise PromptData matching Go struct json tags with omitempty."""
     d: dict = {"content": p.content}
-    if p.role:            # omitempty
+    if p.role:  # omitempty
         d["role"] = p.role
-    if p.token_count:     # omitempty
+    if p.token_count:  # omitempty
         d["token_count"] = p.token_count
     return d
 
@@ -188,9 +188,9 @@ def _ser_prompt(p: PromptData) -> dict:
 def _ser_response(r: ResponseData) -> dict:
     """Serialise ResponseData matching Go struct json tags with omitempty."""
     d: dict = {"content": r.content}
-    if r.finish_reason:   # omitempty
+    if r.finish_reason:  # omitempty
         d["finish_reason"] = r.finish_reason
-    if r.token_count:     # omitempty
+    if r.token_count:  # omitempty
         d["token_count"] = r.token_count
     return d
 
@@ -198,13 +198,13 @@ def _ser_response(r: ResponseData) -> dict:
 def _ser_tool_call(tc: ToolCallData) -> dict:
     """Serialise ToolCallData matching Go struct json tags with omitempty."""
     d: dict = {"tool_name": tc.tool_name, "success": tc.success}
-    if tc.error_msg:      # omitempty
+    if tc.error_msg:  # omitempty
         d["error_msg"] = tc.error_msg
-    if tc.arguments:      # omitempty — omit when None or empty dict
+    if tc.arguments:  # omitempty — omit when None or empty dict
         d["arguments"] = tc.arguments
-    if tc.result:         # omitempty — omit when None or empty dict
+    if tc.result:  # omitempty — omit when None or empty dict
         d["result"] = tc.result
-    if tc.retry_count:    # omitempty
+    if tc.retry_count:  # omitempty
         d["retry_count"] = tc.retry_count
     return d
 
@@ -212,7 +212,7 @@ def _ser_tool_call(tc: ToolCallData) -> dict:
 def _ser_memory(m: MemoryData) -> dict:
     """Serialise MemoryData matching Go struct json tags with omitempty."""
     d: dict = {"operation": m.operation, "key": m.key}
-    if m.value:           # omitempty
+    if m.value:  # omitempty
         d["value"] = m.value
     return d
 
@@ -225,9 +225,9 @@ def _ser_reasoning(r: ReasoningData) -> dict:
 def _ser_error(e: ErrorData) -> dict:
     """Serialise ErrorData matching Go struct json tags with omitempty."""
     d: dict = {"message": e.message, "retryable": e.retryable}
-    if e.code:            # omitempty
+    if e.code:  # omitempty
         d["code"] = e.code
-    if e.stacktrace:      # omitempty
+    if e.stacktrace:  # omitempty
         d["stacktrace"] = e.stacktrace
     return d
 
@@ -327,11 +327,11 @@ class Event:
             d["error"] = _ser_error(self.error)
 
         # Model metadata — omitempty strings/pointers
-        if self.model:                  # omitempty
+        if self.model:  # omitempty
             d["model"] = self.model
         if self.token_usage is not None:
             d["token_usage"] = _ser_token_usage(self.token_usage)
-        if self.labels:                 # omitempty map
+        if self.labels:  # omitempty map
             d["labels"] = self.labels
 
         # Causal attribution — omitempty strings/slices

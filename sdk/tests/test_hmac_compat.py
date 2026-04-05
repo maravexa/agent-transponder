@@ -210,8 +210,14 @@ def test_canonical_json_matches_go():
 
     # Exact field count — no extra fields
     assert set(parsed.keys()) == {
-        "id", "session_id", "agent_id", "tenant_id",
-        "type", "severity", "timestamp", "received_at",
+        "id",
+        "session_id",
+        "agent_id",
+        "tenant_id",
+        "type",
+        "severity",
+        "timestamp",
+        "received_at",
     }
 
 
@@ -237,7 +243,9 @@ def test_all_event_type_strings():
         e = _minimal_event()
         e.type = et
         data = json.loads(_canonical_json(e))
-        assert data["type"] == expected, f"{et!r}: expected {expected!r}, got {data['type']!r}"
+        assert data["type"] == expected, (
+            f"{et!r}: expected {expected!r}, got {data['type']!r}"
+        )
 
 
 def test_all_severity_strings():
