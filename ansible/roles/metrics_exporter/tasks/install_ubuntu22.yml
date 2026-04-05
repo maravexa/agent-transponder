@@ -4,14 +4,14 @@
 - name: Check metrics-exporter binary exists on controller
   ansible.builtin.stat:
     path: "{{ fr_dist_dir }}/metrics-exporter"
-  register: _metrics_exporter_binary
+  register: _exporter_binary
   delegate_to: localhost
   become: false
 
 - name: Fail if metrics-exporter binary is missing
   ansible.builtin.fail:
     msg: "Binary not found at {{ fr_dist_dir }}/metrics-exporter. Run make build-all first."
-  when: not _metrics_exporter_binary.stat.exists
+  when: not _exporter_binary.stat.exists
 
 - name: Copy metrics-exporter binary to target
   ansible.builtin.copy:
