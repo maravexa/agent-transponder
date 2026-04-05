@@ -50,6 +50,7 @@ func TestComputeHMACSortedKeys(t *testing.T) {
 	if err := json.Unmarshal(raw, &m); err != nil {
 		t.Fatalf("json.Unmarshal error: %v", err)
 	}
+	delete(m, "hmac") // Must match ComputeHMAC which excludes the hmac field
 	sorted, err := json.Marshal(m)
 	if err != nil {
 		t.Fatalf("sorted json.Marshal error: %v", err)

@@ -194,6 +194,7 @@ func (e *Event) ComputeHMAC(key []byte) (string, error) {
 	if err := json.Unmarshal(raw, &m); err != nil {
 		return "", fmt.Errorf("unmarshal for hmac sort: %w", err)
 	}
+	delete(m, "hmac") // Exclude hmac field from signature computation
 	canonical, err := json.Marshal(m)
 	if err != nil {
 		return "", fmt.Errorf("remarshal sorted for hmac: %w", err)

@@ -192,8 +192,8 @@ def test_to_dict_basic_fields():
     d = event.to_dict()
     assert d["agent_id"] == "agent-1"
     assert d["tenant_id"] == "team-a"
-    assert d["type"] == int(EventType.PROMPT)
-    assert d["severity"] == int(Severity.DEBUG)
+    assert d["type"] == "prompt"
+    assert d["severity"] == "debug"
     assert d["model"] == "gpt-4"
     assert "prompt" in d
     assert d["prompt"]["content"] == "Test"
@@ -226,8 +226,10 @@ def test_to_dict_omits_none_payloads():
 def test_to_dict_timestamp_is_iso():
     event = Event()
     d = event.to_dict()
-    # Should be parseable as an ISO 8601 datetime
-    parsed = datetime.fromisoformat(d["timestamp"])
+    # Should be a UTC timestamp ending with Z
+    assert d["timestamp"].endswith("Z"), f"timestamp must end with 'Z': {d['timestamp']!r}"
+    # Replace Z for compatibility with Python < 3.11 fromisoformat
+    parsed = datetime.fromisoformat(d["timestamp"][:-1] + "+00:00")
     assert parsed.tzinfo is not None
 
 

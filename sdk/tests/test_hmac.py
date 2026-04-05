@@ -204,7 +204,7 @@ def test_canonical_json_contains_required_fields():
     data = json.loads(payload)
     assert data["agent_id"] == "agt"
     assert data["tenant_id"] == "tnt"
-    assert data["type"] == int(EventType.ERROR)
+    assert data["type"] == "error"
     assert "error" in data
     assert data["error"]["code"] == "ERR"
 
