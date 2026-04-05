@@ -201,7 +201,7 @@ func (e *Event) ComputeHMAC(key []byte) (string, error) {
 		return "", fmt.Errorf("remarshal sorted for hmac: %w", err)
 	}
 
-	slog.Debug("HMAC canonical JSON", "json", string(canonical), "event_id", e.ID)
+	slog.Debug("HMAC computed", "event_id", e.ID)
 
 	mac := hmac.New(sha256.New, key)
 	mac.Write(canonical)

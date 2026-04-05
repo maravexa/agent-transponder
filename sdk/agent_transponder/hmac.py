@@ -36,8 +36,7 @@ def sign_event(event: "Event", key: bytes) -> str:
     """
     payload = _canonical_json(event)
     digest = _hmac.new(key, payload, hashlib.sha256).hexdigest()
-    logger.debug("SIGN canonical: %s", payload.decode())
-    logger.debug("SIGN hmac: %s", digest)
+    logger.debug("SIGN event_id=%s hmac=%s", event.id, digest[:16] + "...")
     event.hmac = digest
     return digest
 

@@ -23,7 +23,7 @@
   community.crypto.openssl_csr:
     path: "{{ fr_tls_dir }}/{{ item.name }}/csr.pem"
     privatekey_path: "{{ fr_tls_dir }}/{{ item.name }}/key.pem"
-    common_name: "{{ item.name }}.flight-recorder"
+    common_name: "{{ item.cn | default(item.name + '.flight-recorder') }}"
     subject_alt_name: >-
       {{ (item.sans | map('regex_replace', '^(.+)$', 'DNS:\1') | list
          + item.sans | map('regex_replace', '^(.+)$', 'IP:\1')

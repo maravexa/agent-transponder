@@ -167,19 +167,21 @@ func (a *Analyzer) poll(ctx context.Context) error {
 	return nil
 }
 
-// eventFiles returns all .jsonl files in the events directory, sorted by name
-// (which for date-bucketed files means chronological order).
+// eventFiles returns all .jsonl files under the events directory (including
+// tenant subdirectories), sorted by path (chronological for date-bucketed files).
 func (a *Analyzer) eventFiles() ([]string, error) {
-	entries, err := os.ReadDir(a.cfg.Events.Path)
+	var paths []string
+	err := filepath.WalkDir(a.cfg.Events.Path, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if !d.IsDir() && strings.HasSuffix(d.Name(), ".jsonl") {
+			paths = append(paths, path)
+		}
+		return nil
+	})
 	if err != nil {
 		return nil, err
-	}
-
-	var paths []string
-	for _, e := range entries {
-		if !e.IsDir() && strings.HasSuffix(e.Name(), ".jsonl") {
-			paths = append(paths, filepath.Join(a.cfg.Events.Path, e.Name()))
-		}
 	}
 	sort.Strings(paths)
 	return paths, nil

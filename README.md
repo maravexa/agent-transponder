@@ -87,6 +87,46 @@ make smoke-test
 # https://localhost:3000 (default: admin/admin)
 ```
 
+## LangChain Integration
+
+Agent Transponder includes a LangChain callback handler that automatically captures telemetry from LangChain agents.
+
+### Installation
+
+```bash
+pip install -e sdk/[langchain]
+```
+
+### Usage
+
+```python
+from agent_transponder import Transponder
+from agent_transponder.integrations.langchain import TransponderCallbackHandler
+
+tp = Transponder(
+    endpoint="localhost:8443",
+    ca_cert="/etc/flight-recorder/tls/ca/ca.crt",
+    client_cert="/etc/flight-recorder/tls/sdk/cert.pem",
+    client_key="/etc/flight-recorder/tls/sdk/key.pem",
+    hmac_key=b"your-hmac-key",
+    agent_id="sdk-demo",
+    tenant_id="my-team",
+)
+
+with tp.session() as session:
+    handler = TransponderCallbackHandler(session)
+    # Pass handler to any LangChain invocation
+    chain.invoke({"input": "..."}, config={"callbacks": [handler]})
+```
+
+### Demo
+
+```bash
+PYTHONPATH=. python examples/langchain_demo.py --verbose
+```
+
+See [examples/README.md](examples/README.md) for full usage.
+
 ## Ansible Roles
 
 | Role             | Purpose                                                    |
