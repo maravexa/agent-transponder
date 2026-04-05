@@ -80,7 +80,8 @@ func computeWithCanonical(e *types.Event, key []byte) (canonical []byte, digest 
 	}
 
 	var m map[string]interface{}
-	if err := json.Unmarshal(raw, &m); err != nil {
+	err = json.Unmarshal(raw, &m)
+	if err != nil {
 		log.Fatalf("unmarshal for sort: %v", err)
 	}
 	delete(m, "hmac")

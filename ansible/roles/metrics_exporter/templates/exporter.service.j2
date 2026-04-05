@@ -35,8 +35,8 @@ ReadOnlyPaths={{ fr_config_dir }} {{ fr_tls_dir }} {{ fr_data_dir }}/findings
 CapabilityBoundingSet=
 
 # Resource limits
-LimitNOFILE={{ exporter_limit_nofile }}
-LimitNPROC={{ exporter_limit_nproc }}
+LimitNOFILE={{ metrics_exporter_limit_nofile }}
+LimitNPROC={{ metrics_exporter_limit_nproc }}
 
 [Install]
 WantedBy=multi-user.target
