@@ -77,22 +77,26 @@ class GrpcTransport:
             channel = grpc.insecure_channel(cfg.endpoint)
 
         self._channel = channel
-        # The generated proto stubs are expected to be importable as:
-        #   from agenttransponder.v1 import events_pb2_grpc
-        # If they haven't been generated yet we fall back to a dynamic stub
-        # that uses the low-level gRPC API.
+        # Try package-local stubs first (installed via pip after `make proto-python`),
+        # then fall back to repo-root stubs (development with PYTHONPATH=.).
         try:
-            from agenttransponder.v1 import events_pb2_grpc  # type: ignore[import]
+            from agent_transponder.agenttransponder.v1 import events_pb2_grpc  # type: ignore[import]
 
             self._stub = events_pb2_grpc.EventIngestionStub(channel)
             self._use_generated_stub = True
         except ImportError:
-            logger.warning(
-                "Generated proto stubs not found — falling back to raw gRPC. "
-                "Run `task proto` to generate the stubs."
-            )
-            self._stub = None
-            self._use_generated_stub = False
+            try:
+                from agenttransponder.v1 import events_pb2_grpc  # type: ignore[import]
+
+                self._stub = events_pb2_grpc.EventIngestionStub(channel)
+                self._use_generated_stub = True
+            except ImportError:
+                logger.warning(
+                    "Generated proto stubs not found. "
+                    "Run `make proto-python` to generate them."
+                )
+                self._stub = None
+                self._use_generated_stub = False
 
     def ping(self) -> bool:
         """Return True if the server is reachable and authenticated."""
@@ -100,7 +104,10 @@ class GrpcTransport:
         if not self._use_generated_stub or self._stub is None:
             return False
         try:
-            from agenttransponder.v1 import events_pb2  # type: ignore[import]
+            try:
+                from agent_transponder.agenttransponder.v1 import events_pb2  # type: ignore[import]
+            except ImportError:
+                from agenttransponder.v1 import events_pb2  # type: ignore[import]
 
             self._stub.Ping(events_pb2.PingRequest(), timeout=5)
             return True
@@ -115,7 +122,10 @@ class GrpcTransport:
             logger.debug("Stub unavailable; dropping event %s", event.id)
             return False
         try:
-            from agenttransponder.v1 import events_pb2  # type: ignore[import]
+            try:
+                from agent_transponder.agenttransponder.v1 import events_pb2  # type: ignore[import]
+            except ImportError:
+                from agenttransponder.v1 import events_pb2  # type: ignore[import]
 
             proto_event = _event_to_proto(event, events_pb2)
             resp = self._stub.IngestEvent(
