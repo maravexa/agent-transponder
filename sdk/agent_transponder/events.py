@@ -10,7 +10,7 @@ import os
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import IntEnum
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 
 # ---------------------------------------------------------------------------
@@ -154,6 +154,11 @@ class Event:
     token_usage: Optional[TokenUsage] = None
     labels: Dict[str, str] = field(default_factory=dict)
 
+    # Causal attribution — populated by framework integrations
+    run_id: Optional[str] = None
+    parent_run_id: Optional[str] = None
+    tags: Optional[List[str]] = None
+
     # Integrity — computed after construction, before transmission
     hmac: str = ""
 
@@ -188,6 +193,13 @@ class Event:
             "model": self.model,
             "labels": self.labels,
         }
+
+        if self.run_id is not None:
+            d["run_id"] = self.run_id
+        if self.parent_run_id is not None:
+            d["parent_run_id"] = self.parent_run_id
+        if self.tags is not None:
+            d["tags"] = self.tags
 
         if self.prompt is not None:
             d["prompt"] = _dataclass_or_none(self.prompt)

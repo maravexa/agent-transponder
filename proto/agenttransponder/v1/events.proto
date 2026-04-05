@@ -72,6 +72,18 @@ message Event {
   TokenUsage token_usage = 21;
   map<string, string> labels = 22;
 
+  // Causal attribution — populated by framework integrations.
+  // run_id identifies this specific execution unit (LLM call, tool call, chain).
+  // parent_run_id links to the enclosing execution unit, forming a tree.
+  // Together they enable run-tree reconstruction for replay and
+  // failure-cascade analysis.
+  string run_id = 25;
+  string parent_run_id = 26;
+
+  // Framework-supplied tags for filtering and routing.
+  // Preserved from the source framework (e.g. LangChain tags).
+  repeated string tags = 27;
+
   // Integrity
   string hmac = 30;
 }

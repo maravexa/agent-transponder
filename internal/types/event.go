@@ -69,6 +69,11 @@ type Event struct {
 	TokenUsage *TokenUsage       `json:"token_usage,omitempty"`
 	Labels     map[string]string `json:"labels,omitempty"` // User-defined key-value pairs
 
+	// Causal attribution — populated by framework integrations
+	RunID       string   `json:"run_id,omitempty"`
+	ParentRunID string   `json:"parent_run_id,omitempty"`
+	Tags        []string `json:"tags,omitempty"`
+
 	// Integrity — set by the SDK, verified by ingestion
 	HMAC string `json:"hmac"` // HMAC-SHA256 over canonical JSON (excluding this field)
 
