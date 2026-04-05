@@ -173,6 +173,9 @@ def _event_to_proto(event: Event, pb2: object) -> object:
         "model": event.model,
         "hmac": event.hmac,
         "labels": event.labels,
+        "run_id": event.run_id or "",
+        "parent_run_id": event.parent_run_id or "",
+        "tags": list(event.tags) if event.tags else [],
     }
 
     if event.prompt is not None:

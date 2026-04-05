@@ -271,17 +271,20 @@ func (f *AnalysisForwarder) recordSuccess() {
 // eventToProto converts an internal Event to its protobuf representation.
 func eventToProto(e *types.Event) *pb.Event {
 	proto := &pb.Event{
-		Id:        e.ID,
-		SessionId: e.SessionID,
-		AgentId:   e.AgentID,
-		TenantId:  e.TenantID,
-		Type:      eventTypeToProto(e.Type),
-		Severity:  severityToProto(e.Severity),
-		Timestamp: timestamppb.New(e.Timestamp),
-		Duration:  durationpb.New(e.Duration),
-		Model:     e.Model,
-		Hmac:      e.HMAC,
-		Labels:    e.Labels,
+		Id:          e.ID,
+		SessionId:   e.SessionID,
+		AgentId:     e.AgentID,
+		TenantId:    e.TenantID,
+		Type:        eventTypeToProto(e.Type),
+		Severity:    severityToProto(e.Severity),
+		Timestamp:   timestamppb.New(e.Timestamp),
+		Duration:    durationpb.New(e.Duration),
+		Model:       e.Model,
+		Hmac:        e.HMAC,
+		Labels:      e.Labels,
+		RunId:       e.RunID,
+		ParentRunId: e.ParentRunID,
+		Tags:        e.Tags,
 	}
 
 	if e.Prompt != nil {
@@ -352,17 +355,20 @@ func eventToProto(e *types.Event) *pb.Event {
 // protoToEvent converts a proto Event to the internal Event type.
 func protoToEvent(p *pb.Event) *types.Event {
 	e := &types.Event{
-		ID:        p.GetId(),
-		SessionID: p.GetSessionId(),
-		AgentID:   p.GetAgentId(),
-		TenantID:  p.GetTenantId(),
-		Type:      protoToEventType(p.GetType()),
-		Severity:  protoToSeverity(p.GetSeverity()),
-		Timestamp: p.GetTimestamp().AsTime(),
-		Duration:  p.GetDuration().AsDuration(),
-		Model:     p.GetModel(),
-		HMAC:      p.GetHmac(),
-		Labels:    p.GetLabels(),
+		ID:          p.GetId(),
+		SessionID:   p.GetSessionId(),
+		AgentID:     p.GetAgentId(),
+		TenantID:    p.GetTenantId(),
+		Type:        protoToEventType(p.GetType()),
+		Severity:    protoToSeverity(p.GetSeverity()),
+		Timestamp:   p.GetTimestamp().AsTime(),
+		Duration:    p.GetDuration().AsDuration(),
+		Model:       p.GetModel(),
+		HMAC:        p.GetHmac(),
+		Labels:      p.GetLabels(),
+		RunID:       p.GetRunId(),
+		ParentRunID: p.GetParentRunId(),
+		Tags:        p.GetTags(),
 	}
 
 	if pr := p.GetPrompt(); pr != nil {

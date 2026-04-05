@@ -123,10 +123,11 @@ func (s *IngestionServer) IngestEvent(ctx context.Context, req *pb.IngestEventRe
 
 	// ── 3. Convert proto event → internal type ─────────────────────────────
 	event := protoToEvent(req.GetEvent())
-	event.AgentID = agentID // Enforce identity from cert, not payload
-	event.TenantID = tenantID
 
 	// ── 4. Verify HMAC integrity ────────────────────────────────────────────
+	// Must happen BEFORE the identity override below. The SDK signed the event
+	// with the agent_id and tenant_id it was configured with; we must verify
+	// against those original values before enforcing the cert identity.
 	if len(hmacKey) > 0 {
 		ok, hmacErr := event.VerifyHMAC(hmacKey)
 		if hmacErr != nil {
@@ -151,7 +152,13 @@ func (s *IngestionServer) IngestEvent(ctx context.Context, req *pb.IngestEventRe
 		}
 	}
 
-	// ── 5. Schema validation ────────────────────────────────────────────────
+	// ── 5a. Enforce identity from cert ──────────────────────────────────────
+	// After HMAC passes, override with cert-asserted identity. This prevents
+	// a compromised SDK from spoofing another agent's ID.
+	event.AgentID = agentID
+	event.TenantID = tenantID
+
+	// ── 5b. Schema validation ───────────────────────────────────────────────
 	if valErr := validateEvent(event); valErr != nil {
 		s.logger.Warn("schema validation failed", "event_id", event.ID, "err", valErr)
 		s.collector.EventsRejected.WithLabelValues("schema_violation").Inc()
