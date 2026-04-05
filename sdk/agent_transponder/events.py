@@ -107,6 +107,9 @@ def _fmt_ts(dt: Optional[datetime]) -> str:
     # Python uses +00:00 for UTC; Go uses Z
     if s.endswith("+00:00"):
         s = s[:-6] + "Z"
+    # Strip trailing zeros from fractional seconds to match Go time.MarshalJSON
+    if "." in s and s.endswith("Z"):
+        s = s[:-1].rstrip("0") + "Z"
     return s
 
 
