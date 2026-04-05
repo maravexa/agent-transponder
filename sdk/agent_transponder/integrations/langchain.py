@@ -12,11 +12,10 @@ import logging
 import threading
 import time
 import traceback
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple
 
 try:
     from langchain_core.callbacks import BaseCallbackHandler
-    from langchain_core.outputs import LLMResult
     from langchain_core.messages import BaseMessage
 
     HAS_LANGCHAIN = True
@@ -145,8 +144,7 @@ class _CallbackMixin:
         parent_run_id: Any = None,
         **kwargs: Any,
     ) -> None:
-        start_data = self._pop_start(run_id)
-        duration_ms = self._duration_ms(start_data[0]) if start_data else 0.0
+        self._pop_start(run_id)
 
         # Extract text from first generation
         content = "[redacted by SDK]"
@@ -224,7 +222,6 @@ class _CallbackMixin:
         if start_data is None:
             return
         start_time, tool_name, input_str, tags, stored_parent = start_data
-        duration_ms = self._duration_ms(start_time)
 
         try:
             args = json.loads(input_str)
