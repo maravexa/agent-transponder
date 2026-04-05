@@ -30,7 +30,7 @@ import logging
 import queue
 import threading
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from .config import TransponderConfig
 from .events import (
@@ -101,6 +101,9 @@ class Session:
         token_count: int = 0,
         severity: Severity = Severity.INFO,
         labels: Optional[Dict[str, str]] = None,
+        run_id: Optional[str] = None,
+        parent_run_id: Optional[str] = None,
+        tags: Optional[List[str]] = None,
     ) -> Event:
         """Record a prompt event."""
         event = Event(
@@ -111,6 +114,9 @@ class Session:
             model=model,
             prompt=PromptData(content=content, role=role, token_count=token_count),
             labels=labels or {},
+            run_id=run_id,
+            parent_run_id=parent_run_id,
+            tags=tags,
         )
         self._submit(event)
         return event
@@ -124,6 +130,9 @@ class Session:
         model: str = "",
         severity: Severity = Severity.INFO,
         labels: Optional[Dict[str, str]] = None,
+        run_id: Optional[str] = None,
+        parent_run_id: Optional[str] = None,
+        tags: Optional[List[str]] = None,
     ) -> Event:
         """Record a model response event."""
         event = Event(
@@ -138,6 +147,9 @@ class Session:
                 token_count=tokens,
             ),
             labels=labels or {},
+            run_id=run_id,
+            parent_run_id=parent_run_id,
+            tags=tags,
         )
         self._submit(event)
         return event
@@ -153,6 +165,9 @@ class Session:
         retry_count: int = 0,
         severity: Severity = Severity.INFO,
         labels: Optional[Dict[str, str]] = None,
+        run_id: Optional[str] = None,
+        parent_run_id: Optional[str] = None,
+        tags: Optional[List[str]] = None,
     ) -> Event:
         """Record a tool call event."""
         event = Event(
@@ -169,6 +184,9 @@ class Session:
                 retry_count=retry_count,
             ),
             labels=labels or {},
+            run_id=run_id,
+            parent_run_id=parent_run_id,
+            tags=tags,
         )
         self._submit(event)
         return event
@@ -182,6 +200,9 @@ class Session:
         retryable: bool = False,
         severity: Severity = Severity.ERROR,
         labels: Optional[Dict[str, str]] = None,
+        run_id: Optional[str] = None,
+        parent_run_id: Optional[str] = None,
+        tags: Optional[List[str]] = None,
     ) -> Event:
         """Record an error event."""
         event = Event(
@@ -196,6 +217,9 @@ class Session:
                 retryable=retryable,
             ),
             labels=labels or {},
+            run_id=run_id,
+            parent_run_id=parent_run_id,
+            tags=tags,
         )
         self._submit(event)
         return event
@@ -207,6 +231,9 @@ class Session:
         step: int = 0,
         severity: Severity = Severity.DEBUG,
         labels: Optional[Dict[str, str]] = None,
+        run_id: Optional[str] = None,
+        parent_run_id: Optional[str] = None,
+        tags: Optional[List[str]] = None,
     ) -> Event:
         """Record a reasoning-step event."""
         event = Event(
@@ -216,6 +243,9 @@ class Session:
             severity=severity,
             reasoning=ReasoningData(step=step, content=content),
             labels=labels or {},
+            run_id=run_id,
+            parent_run_id=parent_run_id,
+            tags=tags,
         )
         self._submit(event)
         return event
@@ -228,6 +258,9 @@ class Session:
         *,
         severity: Severity = Severity.DEBUG,
         labels: Optional[Dict[str, str]] = None,
+        run_id: Optional[str] = None,
+        parent_run_id: Optional[str] = None,
+        tags: Optional[List[str]] = None,
     ) -> Event:
         """Record a memory read/write event."""
         etype = (
@@ -242,6 +275,57 @@ class Session:
             severity=severity,
             memory=MemoryData(operation=operation, key=key, value=value),
             labels=labels or {},
+            run_id=run_id,
+            parent_run_id=parent_run_id,
+            tags=tags,
+        )
+        self._submit(event)
+        return event
+
+    def record_metadata(
+        self,
+        *,
+        severity: Severity = Severity.DEBUG,
+        labels: Optional[Dict[str, str]] = None,
+        run_id: Optional[str] = None,
+        parent_run_id: Optional[str] = None,
+        tags: Optional[List[str]] = None,
+        duration_ms: float = 0.0,
+    ) -> Event:
+        """Record a metadata event."""
+        event = Event(
+            agent_id=self._tp._cfg.agent_id,
+            tenant_id=self._tp._cfg.tenant_id,
+            type=EventType.METADATA,
+            severity=severity,
+            labels=labels or {},
+            run_id=run_id,
+            parent_run_id=parent_run_id,
+            tags=tags,
+            duration_ms=duration_ms,
+        )
+        self._submit(event)
+        return event
+
+    def record_retry(
+        self,
+        *,
+        severity: Severity = Severity.WARNING,
+        labels: Optional[Dict[str, str]] = None,
+        run_id: Optional[str] = None,
+        parent_run_id: Optional[str] = None,
+        tags: Optional[List[str]] = None,
+    ) -> Event:
+        """Record a retry event."""
+        event = Event(
+            agent_id=self._tp._cfg.agent_id,
+            tenant_id=self._tp._cfg.tenant_id,
+            type=EventType.RETRY,
+            severity=severity,
+            labels=labels or {},
+            run_id=run_id,
+            parent_run_id=parent_run_id,
+            tags=tags,
         )
         self._submit(event)
         return event
