@@ -220,7 +220,11 @@ func buildLogger(level string) *slog.Logger {
 
 // collectLoop runs an immediate collection then repeats every interval.
 func collectLoop(ctx context.Context, col *metrics.Collector, storePath string, interval time.Duration, logger *slog.Logger) {
-	collectStoreMetrics(col, storePath, logger)
+	collect := func() {
+		collectStoreMetrics(col, storePath, logger)
+		collectFindingsMetrics(col, storePath, logger)
+	}
+	collect()
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 	for {
@@ -228,8 +232,60 @@ func collectLoop(ctx context.Context, col *metrics.Collector, storePath string, 
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			collectStoreMetrics(col, storePath, logger)
+			collect()
 		}
+	}
+}
+
+// collectFindingsMetrics resets and recounts all findings from JSONL files,
+// exposing per-type/severity/detector counters.  It resets on every poll
+// (Option A) which is correct at v0.1.0 scale where files are small.
+func collectFindingsMetrics(col *metrics.Collector, findingsPath string, logger *slog.Logger) {
+	col.FindingsTotal.Reset()
+
+	err := filepath.Walk(findingsPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil || info.IsDir() || filepath.Ext(path) != ".jsonl" {
+			return err
+		}
+		// Skip cursor file used by the analyzer.
+		if filepath.Base(path) == ".cursor.json" {
+			return nil
+		}
+
+		f, err := os.Open(path)
+		if err != nil {
+			logger.Warn("failed to open findings file", "path", path, "err", err)
+			return nil
+		}
+		defer func() { _ = f.Close() }()
+
+		scanner := bufio.NewScanner(f)
+		scanner.Buffer(make([]byte, 64*1024), 1024*1024)
+		for scanner.Scan() {
+			var finding struct {
+				Type     string `json:"type"`
+				Severity string `json:"severity"`
+				Detector string `json:"detector"`
+			}
+			if err := json.Unmarshal(scanner.Bytes(), &finding); err != nil {
+				continue
+			}
+			if finding.Type != "" {
+				col.FindingsTotal.WithLabelValues(
+					finding.Type,
+					finding.Severity,
+					finding.Detector,
+				).Inc()
+			}
+		}
+		if err := scanner.Err(); err != nil {
+			logger.Warn("findings scan error", "path", path, "err", err)
+		}
+		return nil
+	})
+
+	if err != nil && !os.IsNotExist(err) {
+		logger.Warn("findings walk error", "path", findingsPath, "err", err)
 	}
 }
 

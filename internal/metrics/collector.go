@@ -7,8 +7,15 @@ import "github.com/prometheus/client_golang/prometheus"
 
 const namespace = "agent_transponder"
 
+// flightRecorderNamespace is used for metrics produced by the analysis
+// pipeline (findings, exporter-side counters).
+const flightRecorderNamespace = "flight_recorder"
+
 // Collector holds all registered Prometheus metrics.
 type Collector struct {
+	// Findings metrics (flight_recorder_ prefix — exporter/analyzer side)
+	FindingsTotal *prometheus.CounterVec // labels: type, severity, detector
+
 	// Ingestion metrics
 	EventsIngested    *prometheus.CounterVec
 	EventsRejected    *prometheus.CounterVec
@@ -46,6 +53,12 @@ type Collector struct {
 // NewCollector creates and registers all metrics.
 func NewCollector(reg prometheus.Registerer) *Collector {
 	c := &Collector{
+		FindingsTotal: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Namespace: flightRecorderNamespace,
+			Name:      "findings_total",
+			Help:      "Total findings detected by the analysis engine.",
+		}, []string{"type", "severity", "detector"}),
+
 		EventsIngested: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: namespace,
 			Name:      "events_ingested_total",
@@ -165,6 +178,7 @@ func NewCollector(reg prometheus.Registerer) *Collector {
 
 	// Register all metrics
 	reg.MustRegister(
+		c.FindingsTotal,
 		c.EventsIngested,
 		c.EventsRejected,
 		c.IngestLatency,

@@ -26,8 +26,12 @@ tls_ca_cert: "{{ tls_ca_dir }}/ca.crt"
 # Signal that this is a self-signed internal CA (used for future expansion).
 tls_self_signed: true
 
+# CN for the SDK client certificate.  Must match the agent_id used by the SDK.
+tls_sdk_cert_cn: sdk-demo
+
 # Services to issue certificates for.
 # Each entry must provide: name (str), user (str), sans (list of strings).
+# Optional: cn (str) — overrides the default "<name>.flight-recorder" common name.
 tls_services:
   - name: ingester
     user: fr-ingester
@@ -44,3 +48,7 @@ tls_services:
     sans:
       - "{{ inventory_hostname }}"
       - "{{ ansible_default_ipv4.address | default('127.0.0.1') }}"
+  - name: sdk
+    user: root
+    cn: "{{ tls_sdk_cert_cn }}"
+    sans: []

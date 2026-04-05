@@ -7,6 +7,9 @@ reports/
 /analyzer
 /exporter
 
+# ── Temp / scratch ──
+tmp/
+
 # ── Go ──
 *.exe
 *.exe~
@@ -30,6 +33,7 @@ venv/
 
 # ── Certificates (NEVER commit) ──
 certs/
+flight-recorder-certs/
 
 # ── IDE ──
 .vscode/
@@ -50,3 +54,9 @@ config/local.yaml
 *.local.yaml
 .env
 .env.*
+
+# ── Analyzer state ──
+.cursor.json
+
+# ── Generated proto stubs — committed for user convenience ──
+!sdk/agent_transponder/agenttransponder/v1/*_pb2*.py

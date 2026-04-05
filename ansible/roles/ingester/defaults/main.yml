@@ -23,6 +23,8 @@ ingester_redaction_patterns: []
 ingester_agents:
   default-agent:
     hmac_key: "{{ vault_default_agent_hmac_key | default('CHANGE-ME-IN-VAULT') }}"
+  sdk-demo:
+    hmac_key: "ZGVtby1obWFjLWtleQ=="
 
 # --- Policy ---
 ingester_policy_rate_limit: 100.0

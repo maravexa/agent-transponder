@@ -464,8 +464,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     p.add_argument(
         "--agent-id",
-        default="langchain-demo",
-        help="Agent identifier (default: langchain-demo)",
+        default="sdk-demo",
+        help="Agent identifier; must match the TLS cert CN (default: sdk-demo)",
     )
     p.add_argument(
         "--tenant-id",
