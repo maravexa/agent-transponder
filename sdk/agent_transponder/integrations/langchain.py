@@ -102,7 +102,9 @@ class _CallbackMixin:
         **kwargs: Any,
     ) -> None:
         self._store_start(run_id)
-        content = _format_messages(messages) if self._capture_prompts else "[redacted by SDK]"
+        content = (
+            _format_messages(messages) if self._capture_prompts else "[redacted by SDK]"
+        )
         model = _extract_model_name(serialized)
         self._session.record_prompt(
             content,
@@ -184,7 +186,9 @@ class _CallbackMixin:
     ) -> None:
         self._pop_start(run_id)
         try:
-            tb = "".join(traceback.format_exception(type(error), error, error.__traceback__))
+            tb = "".join(
+                traceback.format_exception(type(error), error, error.__traceback__)
+            )
         except Exception:
             tb = ""
         self._session.record_error(
@@ -422,8 +426,12 @@ if HAS_LANGCHAIN:
         ) -> None:
             try:
                 self._handle_chat_model_start(
-                    serialized, messages, run_id=run_id,
-                    parent_run_id=parent_run_id, tags=tags, metadata=metadata,
+                    serialized,
+                    messages,
+                    run_id=run_id,
+                    parent_run_id=parent_run_id,
+                    tags=tags,
+                    metadata=metadata,
                     **kwargs,
                 )
             except Exception:
@@ -442,26 +450,44 @@ if HAS_LANGCHAIN:
         ) -> None:
             try:
                 self._handle_llm_start(
-                    serialized, prompts, run_id=run_id,
-                    parent_run_id=parent_run_id, tags=tags, metadata=metadata,
+                    serialized,
+                    prompts,
+                    run_id=run_id,
+                    parent_run_id=parent_run_id,
+                    tags=tags,
+                    metadata=metadata,
                     **kwargs,
                 )
             except Exception:
                 logger.exception("Error in on_llm_start callback")
 
         def on_llm_end(
-            self, response: Any, *, run_id: Any, parent_run_id: Any = None, **kwargs: Any
+            self,
+            response: Any,
+            *,
+            run_id: Any,
+            parent_run_id: Any = None,
+            **kwargs: Any,
         ) -> None:
             try:
-                self._handle_llm_end(response, run_id=run_id, parent_run_id=parent_run_id, **kwargs)
+                self._handle_llm_end(
+                    response, run_id=run_id, parent_run_id=parent_run_id, **kwargs
+                )
             except Exception:
                 logger.exception("Error in on_llm_end callback")
 
         def on_llm_error(
-            self, error: BaseException, *, run_id: Any, parent_run_id: Any = None, **kwargs: Any
+            self,
+            error: BaseException,
+            *,
+            run_id: Any,
+            parent_run_id: Any = None,
+            **kwargs: Any,
         ) -> None:
             try:
-                self._handle_llm_error(error, run_id=run_id, parent_run_id=parent_run_id, **kwargs)
+                self._handle_llm_error(
+                    error, run_id=run_id, parent_run_id=parent_run_id, **kwargs
+                )
             except Exception:
                 logger.exception("Error in on_llm_error callback")
 
@@ -478,8 +504,12 @@ if HAS_LANGCHAIN:
         ) -> None:
             try:
                 self._handle_tool_start(
-                    serialized, input_str, run_id=run_id,
-                    parent_run_id=parent_run_id, tags=tags, metadata=metadata,
+                    serialized,
+                    input_str,
+                    run_id=run_id,
+                    parent_run_id=parent_run_id,
+                    tags=tags,
+                    metadata=metadata,
                     **kwargs,
                 )
             except Exception:
@@ -489,15 +519,24 @@ if HAS_LANGCHAIN:
             self, output: Any, *, run_id: Any, parent_run_id: Any = None, **kwargs: Any
         ) -> None:
             try:
-                self._handle_tool_end(output, run_id=run_id, parent_run_id=parent_run_id, **kwargs)
+                self._handle_tool_end(
+                    output, run_id=run_id, parent_run_id=parent_run_id, **kwargs
+                )
             except Exception:
                 logger.exception("Error in on_tool_end callback")
 
         def on_tool_error(
-            self, error: BaseException, *, run_id: Any, parent_run_id: Any = None, **kwargs: Any
+            self,
+            error: BaseException,
+            *,
+            run_id: Any,
+            parent_run_id: Any = None,
+            **kwargs: Any,
         ) -> None:
             try:
-                self._handle_tool_error(error, run_id=run_id, parent_run_id=parent_run_id, **kwargs)
+                self._handle_tool_error(
+                    error, run_id=run_id, parent_run_id=parent_run_id, **kwargs
+                )
             except Exception:
                 logger.exception("Error in on_tool_error callback")
 
@@ -514,26 +553,44 @@ if HAS_LANGCHAIN:
         ) -> None:
             try:
                 self._handle_chain_start(
-                    serialized, inputs, run_id=run_id,
-                    parent_run_id=parent_run_id, tags=tags, metadata=metadata,
+                    serialized,
+                    inputs,
+                    run_id=run_id,
+                    parent_run_id=parent_run_id,
+                    tags=tags,
+                    metadata=metadata,
                     **kwargs,
                 )
             except Exception:
                 logger.exception("Error in on_chain_start callback")
 
         def on_chain_end(
-            self, outputs: Dict[str, Any], *, run_id: Any, parent_run_id: Any = None, **kwargs: Any
+            self,
+            outputs: Dict[str, Any],
+            *,
+            run_id: Any,
+            parent_run_id: Any = None,
+            **kwargs: Any,
         ) -> None:
             try:
-                self._handle_chain_end(outputs, run_id=run_id, parent_run_id=parent_run_id, **kwargs)
+                self._handle_chain_end(
+                    outputs, run_id=run_id, parent_run_id=parent_run_id, **kwargs
+                )
             except Exception:
                 logger.exception("Error in on_chain_end callback")
 
         def on_chain_error(
-            self, error: BaseException, *, run_id: Any, parent_run_id: Any = None, **kwargs: Any
+            self,
+            error: BaseException,
+            *,
+            run_id: Any,
+            parent_run_id: Any = None,
+            **kwargs: Any,
         ) -> None:
             try:
-                self._handle_chain_error(error, run_id=run_id, parent_run_id=parent_run_id, **kwargs)
+                self._handle_chain_error(
+                    error, run_id=run_id, parent_run_id=parent_run_id, **kwargs
+                )
             except Exception:
                 logger.exception("Error in on_chain_error callback")
 
@@ -548,28 +605,47 @@ if HAS_LANGCHAIN:
         ) -> None:
             try:
                 self._handle_retriever_start(
-                    serialized, query, run_id=run_id,
-                    parent_run_id=parent_run_id, **kwargs,
+                    serialized,
+                    query,
+                    run_id=run_id,
+                    parent_run_id=parent_run_id,
+                    **kwargs,
                 )
             except Exception:
                 logger.exception("Error in on_retriever_start callback")
 
         def on_retriever_end(
-            self, documents: Any, *, run_id: Any, parent_run_id: Any = None, **kwargs: Any
+            self,
+            documents: Any,
+            *,
+            run_id: Any,
+            parent_run_id: Any = None,
+            **kwargs: Any,
         ) -> None:
             try:
                 self._handle_retriever_end(
-                    documents, run_id=run_id, parent_run_id=parent_run_id, **kwargs,
+                    documents,
+                    run_id=run_id,
+                    parent_run_id=parent_run_id,
+                    **kwargs,
                 )
             except Exception:
                 logger.exception("Error in on_retriever_end callback")
 
         def on_retry(
-            self, retry_state: Any, *, run_id: Any, parent_run_id: Any = None, **kwargs: Any
+            self,
+            retry_state: Any,
+            *,
+            run_id: Any,
+            parent_run_id: Any = None,
+            **kwargs: Any,
         ) -> None:
             try:
                 self._handle_retry(
-                    retry_state, run_id=run_id, parent_run_id=parent_run_id, **kwargs,
+                    retry_state,
+                    run_id=run_id,
+                    parent_run_id=parent_run_id,
+                    **kwargs,
                 )
             except Exception:
                 logger.exception("Error in on_retry callback")

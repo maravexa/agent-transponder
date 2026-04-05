@@ -78,7 +78,9 @@ class MockMessage:
 @dataclass
 class MockGeneration:
     text: str = "Response text"
-    generation_info: Dict[str, Any] = field(default_factory=lambda: {"finish_reason": "stop"})
+    generation_info: Dict[str, Any] = field(
+        default_factory=lambda: {"finish_reason": "stop"}
+    )
 
 
 @dataclass
@@ -137,10 +139,19 @@ class TestOnChatModelStartRecordsPrompt:
         parent_id = uid()
         tags = ["tag1", "tag2"]
         serialized = {"kwargs": {"model_name": "gpt-4"}, "id": ["ChatOpenAI"]}
-        messages = [[MockMessage(type="system", content="You are helpful"), MockMessage(type="human", content="Hi")]]
+        messages = [
+            [
+                MockMessage(type="system", content="You are helpful"),
+                MockMessage(type="human", content="Hi"),
+            ]
+        ]
 
         handler._handle_chat_model_start(
-            serialized, messages, run_id=run_id, parent_run_id=parent_id, tags=tags,
+            serialized,
+            messages,
+            run_id=run_id,
+            parent_run_id=parent_id,
+            tags=tags,
         )
 
         args, kwargs = session.last("record_prompt")
@@ -156,7 +167,11 @@ class TestOnChatModelStartRecordsPrompt:
         handler, session = make_handler()
         serialized = {"id": ["langchain", "llms", "CustomLLM"]}
         handler._handle_chat_model_start(
-            serialized, [[MockMessage()]], run_id=uid(), parent_run_id=None, tags=None,
+            serialized,
+            [[MockMessage()]],
+            run_id=uid(),
+            parent_run_id=None,
+            tags=None,
         )
         _, kwargs = session.last("record_prompt")
         assert kwargs["model"] == "CustomLLM"
@@ -198,7 +213,11 @@ class TestOnToolStartEndRecordsCompleteToolCall:
         serialized = {"name": "calculator"}
 
         handler._handle_tool_start(
-            serialized, '{"x": 1}', run_id=run_id, parent_run_id=parent_id, tags=["math"],
+            serialized,
+            '{"x": 1}',
+            run_id=run_id,
+            parent_run_id=parent_id,
+            tags=["math"],
         )
         time.sleep(0.01)
         handler._handle_tool_end("42", run_id=run_id, parent_run_id=parent_id)
@@ -227,7 +246,8 @@ class TestOnToolErrorRecordsFailure:
         run_id = uid()
         handler._handle_tool_start({"name": "api"}, "{}", run_id=run_id, tags=["net"])
         handler._handle_tool_error(
-            RuntimeError("connection refused"), run_id=run_id,
+            RuntimeError("connection refused"),
+            run_id=run_id,
         )
 
         tool_calls = session.all_of("record_tool_call")
@@ -266,13 +286,22 @@ class TestOnChainStartEndRecordsMetadata:
         handler, session = make_handler()
         run_id = uid()
         parent_id = uid()
-        serialized = {"name": "RetrievalQA", "id": ["langchain", "chains", "RetrievalQAChain"]}
+        serialized = {
+            "name": "RetrievalQA",
+            "id": ["langchain", "chains", "RetrievalQAChain"],
+        }
 
         handler._handle_chain_start(
-            serialized, {"query": "test"}, run_id=run_id, parent_run_id=parent_id, tags=["qa"],
+            serialized,
+            {"query": "test"},
+            run_id=run_id,
+            parent_run_id=parent_id,
+            tags=["qa"],
         )
         time.sleep(0.01)
-        handler._handle_chain_end({"result": "ok"}, run_id=run_id, parent_run_id=parent_id)
+        handler._handle_chain_end(
+            {"result": "ok"}, run_id=run_id, parent_run_id=parent_id
+        )
 
         meta_calls = session.all_of("record_metadata")
         assert len(meta_calls) == 2
@@ -306,7 +335,8 @@ class TestOnRetrieverEndRespectsCaptureFlag:
 
     def test_capture_enabled_with_truncation(self) -> None:
         handler, session = make_handler(
-            capture_retriever_content=True, retriever_content_max_chars=10,
+            capture_retriever_content=True,
+            retriever_content_max_chars=10,
         )
         run_id = uid()
         handler._handle_retriever_start({}, "my query", run_id=run_id)
@@ -355,7 +385,9 @@ class TestCallbackErrorDoesNotPropagate:
         # Test the wrapping pattern by simulating what the real handler does.
         try:
             handler._handle_chat_model_start(
-                {}, [[MockMessage()]], run_id=uid(),
+                {},
+                [[MockMessage()]],
+                run_id=uid(),
             )
             # If we got here from the mixin, it means the mixin raised.
             # That's expected — the wrapping is in TransponderCallbackHandler.
@@ -369,7 +401,9 @@ class TestCallbackErrorDoesNotPropagate:
             def __init__(self, sess: Any) -> None:
                 self._init_state(sess)
 
-            def on_chat_model_start(self, serialized: Any, messages: Any, **kw: Any) -> None:
+            def on_chat_model_start(
+                self, serialized: Any, messages: Any, **kw: Any
+            ) -> None:
                 try:
                     self._handle_chat_model_start(serialized, messages, **kw)
                 except Exception:
