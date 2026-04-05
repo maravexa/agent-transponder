@@ -227,7 +227,9 @@ def test_to_dict_timestamp_is_iso():
     event = Event()
     d = event.to_dict()
     # Should be a UTC timestamp ending with Z
-    assert d["timestamp"].endswith("Z"), f"timestamp must end with 'Z': {d['timestamp']!r}"
+    assert d["timestamp"].endswith("Z"), (
+        f"timestamp must end with 'Z': {d['timestamp']!r}"
+    )
     # Replace Z for compatibility with Python < 3.11 fromisoformat
     parsed = datetime.fromisoformat(d["timestamp"][:-1] + "+00:00")
     assert parsed.tzinfo is not None
