@@ -16,39 +16,18 @@ This is a hybrid Go + Python project:
 
 ### Component Map
 
-```
-Agent SDK (Python)
-    │
-    │ gRPC + mTLS (:8443)
-    ▼
-┌─────────────────────────────────┐
-│ Ingester (Go)                   │
-│ Health :8081 │ Metrics :8082    │
-│ Events → JSONL on disk          │
-│ Audit → append-only JSONL       │
-└─────────┬───────────────────────┘
-          │ filesystem
-          ▼
-┌─────────────────────────────────┐
-│ Analyzer (Go)                   │
-│ Health :8420                    │
-│ Loop, Tool Misuse, Drift detect │
-│ Findings → JSONL on disk        │
-└─────────┬───────────────────────┘
-          │ filesystem
-          ▼
-┌─────────────────────────────────┐
-│ Metrics Exporter (Go)           │
-│ /metrics :8430                  │
-│ Exposes findings as Prometheus  │
-└─────────┬───────────────────────┘
-          │ Prometheus scrape
-          ▼
-┌─────────────────────────────────┐
-│ Prometheus (:9090)              │
-│ Grafana (:3000)                 │
-│ Node Exporter (:9100)           │
-└─────────────────────────────────┘
+```mermaid
+graph TD
+    SDK["**Agent SDK** (Python)"]
+    Ingester["**Ingester** (Go)\nHealth :8081 · Metrics :8082\nEvents → JSONL on disk\nAudit → append-only JSONL"]
+    Analyzer["**Analyzer** (Go)\nHealth :8420\nLoop, Tool Misuse, Drift detect\nFindings → JSONL on disk"]
+    Exporter["**Metrics Exporter** (Go)\n/metrics :8430\nExposes findings as Prometheus"]
+    Monitoring["**Prometheus** :9090\n**Grafana** :3000\n**Node Exporter** :9100"]
+
+    SDK -- "gRPC + mTLS (:8443)" --> Ingester
+    Ingester -- "filesystem" --> Analyzer
+    Analyzer -- "filesystem" --> Exporter
+    Exporter -- "Prometheus scrape" --> Monitoring
 ```
 
 ## Code Organization
