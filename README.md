@@ -1,5 +1,7 @@
 # Agent Transponder
 
+[![CI/CD](https://img.shields.io/github/actions/workflow/status/maravexa/agent-transponder/ci.yml?branch=main&label=CI%2FCD)](https://github.com/maravexa/agent-transponder/actions/workflows/ci.yml)
+
 **Black box telemetry and failure detection for AI agents. Security-first.**
 
 Agent Transponder is an observability and safety platform that captures detailed telemetry from AI agent systems to detect failures, drift, unsafe behaviors, and emergent patterns. Inspired by aviation flight recorders, it provides tamper-evident recording, real-time analysis, and production-grade monitoring for any LLM-backed agent.
