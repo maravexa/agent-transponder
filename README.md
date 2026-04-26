@@ -250,4 +250,4 @@ cosign verify-attestation ghcr.io/<owner>/agent-transponder/ingestion:<tag> \
 
 ## License
 
-[TBD]
+MIT License
