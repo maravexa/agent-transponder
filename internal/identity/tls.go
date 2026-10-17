@@ -6,8 +6,9 @@ import (
 	"crypto/x509"
 	"fmt"
 	"os"
-	"strings"
 	"sync"
+
+	"github.com/agent-transponder/agent-transponder/internal/types"
 )
 
 // TLSProvider is the 0.1.0 IdentityProvider implementation.
@@ -87,7 +88,11 @@ func (p *TLSProvider) Identify(ctx context.Context, certs []*x509.Certificate) (
 	// Extract tenant from Organization field
 	tenantID := "_default"
 	if len(leaf.Subject.Organization) > 0 {
-		tenantID = sanitizeIdentifier(leaf.Subject.Organization[0])
+		tenantID = leaf.Subject.Organization[0]
+	}
+
+	if err := types.ValidateTenantID(tenantID); err != nil {
+		return nil, err
 	}
 
 	// Look up HMAC key
@@ -122,11 +127,4 @@ func (p *TLSProvider) LookupHMACKey(ctx context.Context, agentID string) ([]byte
 // The 1.0.0 SPIRE implementation will close the workload API connection.
 func (p *TLSProvider) Close() error {
 	return nil
-}
-
-// sanitizeIdentifier cleans a string for use as a tenant/agent ID.
-func sanitizeIdentifier(s string) string {
-	s = strings.ToLower(strings.TrimSpace(s))
-	s = strings.ReplaceAll(s, " ", "-")
-	return s
 }

@@ -172,3 +172,54 @@ func TestBuildTLSConfig_NoCert(t *testing.T) {
 		t.Error("expected nil tls.Config when no cert configured")
 	}
 }
+
+func TestStoreMetricsSymlinkConfinement(t *testing.T) {
+	dir := t.TempDir()
+	outside := filepath.Join(t.TempDir(), "outside.jsonl")
+	if err := os.WriteFile(outside, []byte("one\ntwo\n"), 0640); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(outside, filepath.Join(dir, "escape.jsonl")); err != nil {
+		t.Fatal(err)
+	}
+	root, err := os.OpenRoot(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer root.Close()
+	if _, _, err = countLines(root, "escape.jsonl"); err == nil {
+		t.Fatal("count escaped root")
+	}
+	inside := filepath.Join(dir, "inside.jsonl")
+	if err = os.WriteFile(inside, []byte("one\n"), 0640); err != nil {
+		t.Fatal(err)
+	}
+	if err = os.Symlink("inside.jsonl", filepath.Join(dir, "alias.jsonl")); err != nil {
+		t.Fatal(err)
+	}
+	if n, _, countErr := countLines(root, "alias.jsonl"); countErr != nil || n != 1 {
+		t.Fatal("contained symlink should work", n, countErr)
+	}
+	reg := prometheus.NewRegistry()
+	col := metrics.NewCollector(reg)
+	collectStoreMetrics(col, dir, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	families, err := reg.Gather()
+	if err != nil {
+		t.Fatal(err)
+	}
+	found := false
+	for _, family := range families {
+		if family.GetName() == "agent_transponder_events_stored" {
+			found = true
+			for _, m := range family.Metric {
+				if m.GetGauge().GetValue() != 2 {
+					t.Fatal("counted outside file", m)
+				}
+			}
+		}
+	}
+
+	if !found {
+		t.Fatal("missing event gauge")
+	}
+}

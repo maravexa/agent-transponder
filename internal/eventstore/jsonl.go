@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"sync"
@@ -18,10 +19,10 @@ import (
 // It writes events as newline-delimited JSON to append-only files,
 // bucketed by date for retention management.
 type JSONLStore struct {
-	writers  map[string]*bufio.Writer
-	files    map[string]*os.File
-	basePath string
-	mu       sync.Mutex
+	writers map[string]*bufio.Writer
+	files   map[string]*os.File
+	root    *os.Root
+	mu      sync.Mutex
 }
 
 // NewJSONLStore creates a new JSONL-backed event store.
@@ -30,10 +31,14 @@ func NewJSONLStore(basePath string) (*JSONLStore, error) {
 		return nil, fmt.Errorf("create store directory: %w", err)
 	}
 
+	root, err := os.OpenRoot(basePath)
+	if err != nil {
+		return nil, err
+	}
 	return &JSONLStore{
-		basePath: basePath,
-		writers:  make(map[string]*bufio.Writer),
-		files:    make(map[string]*os.File),
+		root:    root,
+		writers: make(map[string]*bufio.Writer),
+		files:   make(map[string]*os.File),
 	}, nil
 }
 
@@ -42,6 +47,9 @@ func (s *JSONLStore) Append(ctx context.Context, event *types.Event) (string, er
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	if err := types.ValidateTenantID(event.TenantID); err != nil {
+		return "", err
+	}
 	bucket := s.bucketKey(event.TenantID, event.Timestamp)
 	w, err := s.getWriter(bucket)
 	if err != nil {
@@ -78,7 +86,7 @@ func (s *JSONLStore) Query(ctx context.Context, filter QueryFilter) ([]*types.Ev
 
 	var results []*types.Event
 
-	err := filepath.Walk(s.basePath, func(path string, info os.FileInfo, err error) error {
+	err := fs.WalkDir(s.root.FS(), ".", func(path string, info fs.DirEntry, err error) error {
 		if err != nil || info.IsDir() || filepath.Ext(path) != ".jsonl" {
 			return err
 		}
@@ -91,7 +99,7 @@ func (s *JSONLStore) Query(ctx context.Context, filter QueryFilter) ([]*types.Ev
 
 		if filter.Limit > 0 && len(results) >= filter.Limit {
 			results = results[:filter.Limit]
-			return filepath.SkipAll
+			return fs.SkipAll
 		}
 		return nil
 	})
@@ -161,15 +169,15 @@ func (s *JSONLStore) Close() error {
 
 	s.writers = make(map[string]*bufio.Writer)
 	s.files = make(map[string]*os.File)
+	if err := s.root.Close(); firstErr == nil {
+		firstErr = err
+	}
 	return firstErr
 }
 
 // bucketKey generates the storage key for a tenant + time window.
 // Format: {tenant}/{date}.jsonl — one file per tenant per day.
 func (s *JSONLStore) bucketKey(tenantID string, t time.Time) string {
-	if tenantID == "" {
-		tenantID = "_default"
-	}
 	return filepath.Join(tenantID, t.UTC().Format("2006-01-02"))
 }
 
@@ -179,12 +187,12 @@ func (s *JSONLStore) getWriter(bucket string) (*bufio.Writer, error) {
 		return w, nil
 	}
 
-	path := filepath.Join(s.basePath, bucket+".jsonl")
-	if err := os.MkdirAll(filepath.Dir(path), 0o750); err != nil {
+	path := bucket + ".jsonl"
+	if err := s.root.MkdirAll(filepath.Dir(path), 0o750); err != nil {
 		return nil, err
 	}
 
-	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o640)
+	f, err := s.root.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o640)
 	if err != nil {
 		return nil, err
 	}
@@ -197,7 +205,7 @@ func (s *JSONLStore) getWriter(bucket string) (*bufio.Writer, error) {
 
 // scanFile reads a JSONL file and returns events matching the filter.
 func (s *JSONLStore) scanFile(ctx context.Context, path string, filter QueryFilter) ([]*types.Event, error) {
-	f, err := os.Open(path)
+	f, err := s.root.Open(path)
 	if err != nil {
 		return nil, err
 	}

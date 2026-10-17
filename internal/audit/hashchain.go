@@ -6,8 +6,10 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sync"
 	"time"
 )
@@ -20,6 +22,7 @@ type HashChainSink struct {
 	writer       *bufio.Writer
 	previousHash string
 	path         string
+	root         *os.Root
 	mu           sync.Mutex
 	seq          int64
 }
@@ -29,18 +32,25 @@ const genesisHash = "00000000000000000000000000000000000000000000000000000000000
 // NewHashChainSink creates a new hash-chained audit log.
 // If the file exists, it resumes from the last entry to maintain the chain.
 func NewHashChainSink(path string) (*HashChainSink, error) {
+	root, err := os.OpenRoot(filepath.Dir(path))
+	if err != nil {
+		return nil, err
+	}
 	s := &HashChainSink{
-		path:         path,
+		root:         root,
+		path:         filepath.Base(path),
 		previousHash: genesisHash,
 	}
 
 	// Resume chain state from existing log
-	if err := s.resumeChain(); err != nil {
+	if err = s.resumeChain(); err != nil {
+		_ = root.Close()
 		return nil, fmt.Errorf("resume audit chain: %w", err)
 	}
 
-	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o640)
+	f, err := root.OpenFile(s.path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o640)
 	if err != nil {
+		_ = root.Close()
 		return nil, fmt.Errorf("open audit log: %w", err)
 	}
 
@@ -92,7 +102,7 @@ func (s *HashChainSink) Log(ctx context.Context, entry Entry) error {
 // Verify checks the integrity of the hash chain.
 // Returns -1 if the chain is intact, or the sequence number of the first broken link.
 func (s *HashChainSink) Verify(ctx context.Context, fromSeq int64) (int64, error) {
-	f, err := os.Open(s.path)
+	f, err := s.root.Open(s.path)
 	if err != nil {
 		return -1, fmt.Errorf("open audit log for verification: %w", err)
 	}
@@ -154,10 +164,7 @@ func (s *HashChainSink) Close() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if err := s.writer.Flush(); err != nil {
-		return err
-	}
-	return s.file.Close()
+	return errors.Join(s.writer.Flush(), s.file.Close(), s.root.Close())
 }
 
 // computeHash produces the SHA-256 hash for an audit entry.
@@ -181,7 +188,7 @@ func (s *HashChainSink) computeHash(entry Entry) string {
 // resumeChain reads the existing audit log to recover the latest
 // sequence number and hash, allowing the chain to continue after restart.
 func (s *HashChainSink) resumeChain() error {
-	f, err := os.Open(s.path)
+	f, err := s.root.Open(s.path)
 	if os.IsNotExist(err) {
 		return nil // Fresh start
 	}
