@@ -1,5 +1,6 @@
 # .github/workflows/ci.yml
 # Agent Transponder — Full CI/CD Pipeline
+# Publication trust boundaries and gate policy: docs/ci-security.md
 #
 # Triggers:
 #   - Push to main: build + sign + push images
@@ -12,8 +13,8 @@ on:
   push:
     branches: [main]
     tags: ["v*"]
+  # Validate stacked review branches with the same unprivileged jobs.
   pull_request:
-    branches: [main]
 
 permissions:
   contents: read
@@ -32,15 +33,15 @@ jobs:
     name: Lint Go
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v7
+        uses: golangci/golangci-lint-action@9fae48acfc02a90574d7c304a1758ef9895495fa # v7
         with:
           version: v2.15.0
           install-mode: goinstall
@@ -52,7 +53,7 @@ jobs:
           mkdir -p reports
           gosec -fmt=json -out=reports/gosec.json ./... || true
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: gosec-report
@@ -62,9 +63,9 @@ jobs:
     name: Lint Python
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -81,7 +82,7 @@ jobs:
           mkdir -p reports
           bandit -r sdk/ -f json -o reports/bandit.json || true
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: bandit-report
@@ -93,9 +94,9 @@ jobs:
     container:
       image: semgrep/semgrep
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - run: semgrep scan --config=auto --json -o reports/semgrep.json .
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: semgrep-report
@@ -110,9 +111,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: [lint-go]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
@@ -125,7 +126,7 @@ jobs:
       - name: Coverage report
         run: go tool cover -func=reports/coverage.out
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: go-coverage
           path: reports/coverage.out
@@ -135,9 +136,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: [lint-python]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -147,7 +148,7 @@ jobs:
       - name: Run SDK tests
         run: cd sdk && python -m pytest tests/ -v --tb=short --junitxml=../reports/sdk-tests.xml
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: python-test-results
@@ -155,38 +156,103 @@ jobs:
 
   # ════════════════════════════════════════════
   # Stage 3: Build Container Images
-  # TODO: Docker builds are secondary for v0.1.0; Ansible deployment is primary.
-  #       Re-enable and add analyzer image once Docker images are needed for release.
+  # Build and scan archives with read-only permissions before publication.
   # ════════════════════════════════════════════
 
   build-images:
-    name: Build & Push Images
+    name: Build & Scan (${{ matrix.component }}, ${{ matrix.arch }})
     runs-on: ubuntu-latest
-    needs: [test-go, test-python, semgrep]
+    needs: [test-go, test-python, semgrep, lint-ansible]
     permissions:
       contents: read
-      packages: write       # Push to GHCR
-      id-token: write       # Keyless signing via Sigstore
+    strategy:
+      matrix:
+        component: [ingestion, exporter, analyzer]
+        arch: [amd64, arm64]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      - name: Install pinned Cosign
+        run: bash scripts/ci/install-cosign.sh
+      - name: Install verified Grype
+        run: bash scripts/ci/install-grype.sh
+      - name: Build local archive (never push)
+        id: build
+        env:
+          BUILDX_METADATA_PROVENANCE: min
+        uses: docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25 # v5
+        with:
+          context: .
+          file: deploy/docker/Dockerfile.${{ matrix.component }}
+          platforms: linux/${{ matrix.arch }}
+          outputs: type=docker,dest=${{ runner.temp }}/image.tar
+          push: false
+          provenance: false
+          tags: local/agent-transponder:${{ matrix.component }}-${{ matrix.arch }}
+          cache-from: type=gha,scope=${{ matrix.component }}-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.component }}-${{ matrix.arch }}
+          build-args: |
+            VERSION=${{ github.ref_name }}
+            COMMIT=${{ github.sha }}
+            BUILD_TIME=${{ github.event.head_commit.timestamp }}
+      - name: Retain and validate BuildKit provenance
+        env:
+          BUILD_METADATA: ${{ steps.build.outputs.metadata }}
+          ARCH: ${{ matrix.arch }}
+        run: |
+          printf '%s\n' "$BUILD_METADATA" > "$RUNNER_TEMP/metadata.json"
+          image_id=$(python3 scripts/ci/image-id.py "$RUNNER_TEMP/image.tar" "$ARCH")
+          python3 scripts/ci/prepare-provenance.py "$RUNNER_TEMP/metadata.json" "$image_id" "$RUNNER_TEMP/provenance.json"
+      - name: Scan exact archive
+        run: bash scripts/ci/scan-image.sh "$RUNNER_TEMP/image.tar" "$RUNNER_TEMP/reports"
+      - name: Retain scan evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: grype-${{ matrix.component }}-${{ matrix.arch }}
+          path: ${{ runner.temp }}/reports/
+      - name: Retain scanned image for publication
+        if: github.event_name == 'push'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: image-${{ matrix.component }}-${{ matrix.arch }}
+          path: |
+            ${{ runner.temp }}/image.tar
+            ${{ runner.temp }}/image.sha256
+            ${{ runner.temp }}/metadata.json
+          if-no-files-found: error
+          retention-days: 2
+
+  publish-images:
+    name: Publish Scanned Images (${{ matrix.component }})
+    runs-on: ubuntu-latest
+    needs: [build-images]
+    if: github.event_name == 'push'
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
     strategy:
       matrix:
         component: [ingestion, exporter, analyzer]
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to GHCR
-        if: github.event_name != 'pull_request'
-        uses: docker/login-action@v3
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: image-${{ matrix.component }}-amd64
+          path: images/amd64
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: image-${{ matrix.component }}-arm64
+          path: images/arm64
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata
+      - uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
         id: meta
-        uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ matrix.component }}
           tags: |
@@ -194,123 +260,34 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=sha
             type=raw,value=latest,enable={{is_default_branch}}
-
-      - name: Build and push
-        id: build
-        uses: docker/build-push-action@v5
+      - name: Install pinned Cosign
+        run: bash scripts/ci/install-cosign.sh
+      - uses: anchore/sbom-action/download-syft@e22c389904149dbc22b58101806040fa8d37a610 # v0
         with:
-          context: .
-          file: deploy/docker/Dockerfile.${{ matrix.component }}
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          platforms: linux/amd64
-          build-args: |
-            VERSION=${{ github.ref_name }}
-            COMMIT=${{ github.sha }}
-            BUILD_TIME=${{ github.event.head_commit.timestamp }}
-
-      # ── Sign with cosign (keyless / Sigstore) ──
-      - name: Install cosign
-        if: github.event_name != 'pull_request'
-        uses: sigstore/cosign-installer@v3
-
-      - name: Sign image
-        if: github.event_name != 'pull_request'
+          syft-version: v1.54.1
+      - name: Publish, sign and attest scanned images
         env:
-          DIGEST: ${{ steps.build.outputs.digest }}
-        run: |
-          cosign sign --yes \
-            ${{ env.REGISTRY }}/${{ matrix.component }}@${DIGEST}
-
-      # ── Generate SBOM ──
-      - name: Install syft
-        if: github.event_name != 'pull_request'
-        uses: anchore/sbom-action/download-syft@v0
-
-      - name: Generate SBOM
-        if: github.event_name != 'pull_request'
-        env:
-          DIGEST: ${{ steps.build.outputs.digest }}
-        run: |
-          mkdir -p sbom
-          syft ${{ env.REGISTRY }}/${{ matrix.component }}@${DIGEST} \
-            -o spdx-json=sbom/${{ matrix.component }}.spdx.json \
-            -o cyclonedx-json=sbom/${{ matrix.component }}.cdx.json
-
-      - name: Attest SBOM
-        if: github.event_name != 'pull_request'
-        env:
-          DIGEST: ${{ steps.build.outputs.digest }}
-        run: |
-          cosign attest --yes \
-            --predicate sbom/${{ matrix.component }}.spdx.json \
-            --type spdxjson \
-            ${{ env.REGISTRY }}/${{ matrix.component }}@${DIGEST}
-
-      - uses: actions/upload-artifact@v4
-        if: github.event_name != 'pull_request'
+          IMAGE: ${{ env.REGISTRY }}/${{ matrix.component }}
+          COMPONENT: ${{ matrix.component }}
+          COMMIT: ${{ github.sha }}
+          TAGS: ${{ steps.meta.outputs.tags }}
+        run: bash scripts/ci/publish-images.sh
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: sbom-${{ matrix.component }}
           path: sbom/
-
-  # ════════════════════════════════════════════
-  # Stage 4: Vulnerability Scan
-  # ════════════════════════════════════════════
-
-  vuln-scan:
-    name: Vulnerability Scan
-    runs-on: ubuntu-latest
-    needs: [build-images]
-    if: github.event_name != 'pull_request'
-    permissions:
-      contents: read
-      packages: read
-      security-events: read
-    strategy:
-      matrix:
-        component: [ingestion, exporter, analyzer]
-    steps:
-      - name: Log in to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Install grype
-        run: curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
-
-      - uses: actions/checkout@v4
-
-      - name: Scan for vulnerabilities
-        run: |
-          grype ${{ env.REGISTRY }}/${{ matrix.component }}:sha-${GITHUB_SHA::7} \
-            --fail-on critical \
-            -o table \
-            -o sarif=${{ matrix.component }}-grype.sarif
-
-      - name: Upload scan results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: grype-${{ matrix.component }}
-          path: ${{ matrix.component }}-grype.sarif
-
-  # ════════════════════════════════════════════
-  # Stage 4b: Ansible Lint
-  # ════════════════════════════════════════════
 
   lint-ansible:
     name: Lint Ansible
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Install ansible-lint
         run: pip install ansible-lint
+
+      - name: Test CI security boundaries
+        run: python3 scripts/ci/test_security.py
 
       - name: Run ansible-lint
         run: cd ansible && ansible-lint roles/ site.yml local.yml
@@ -322,46 +299,43 @@ jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
-    needs: [vuln-scan]
+    needs: [publish-images]
     if: startsWith(github.ref, 'refs/tags/v')
     permissions:
       contents: write       # Create GitHub release
-      packages: write       # Push to GHCR
       id-token: write       # Keyless signing
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0    # GoReleaser needs full history for changelog
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
 
-      - name: Install cosign
-        uses: sigstore/cosign-installer@v3
+      # Preserve the existing GoReleaser detached-signature interface.
+      - name: Install release signer
+        uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac # v3
+        with:
+          cosign-release: v2.5.2
 
       - name: Install syft
-        uses: anchore/sbom-action/download-syft@v0
-
-      - name: Log in to GHCR
-        uses: docker/login-action@v3
+        uses: anchore/sbom-action/download-syft@e22c389904149dbc22b58101806040fa8d37a610 # v0
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          syft-version: v1.54.1
 
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v6
+        uses: goreleaser/goreleaser-action@e435ccd777264be153ace6237001ef4d979d3a7a # v6
         with:
-          version: latest
+          version: v2.18.3
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_USER: ${{ github.repository_owner }}
 
       # Download SBOMs from build stage and attach to release
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           pattern: sbom-*
           merge-multiple: true
@@ -370,5 +344,6 @@ jobs:
       - name: Attach SBOMs to release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ github.ref_name }}
         run: |
-          gh release upload ${{ github.ref_name }} sbom/*.json --clobber
+          gh release upload "$RELEASE_TAG" sbom/*.json --clobber
