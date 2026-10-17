@@ -4,10 +4,11 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io/fs"
 	"log/slog"
 	"os"
-	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
@@ -24,7 +25,8 @@ type Analyzer struct {
 	plugins       *PluginsConfig
 	detectors     []Detector
 	cursor        *Cursor
-	cursorPath    string
+	eventsRoot    *os.Root
+	findingsRoot  *os.Root
 	mu            sync.Mutex // guards lastProcessed
 	lastProcessed time.Time
 	logger        *slog.Logger
@@ -39,21 +41,35 @@ func New(cfg *Config, plugins *PluginsConfig, detectors []Detector, logger *slog
 		return nil, fmt.Errorf("create events dir: %w", err)
 	}
 
-	cursorPath := CursorPath(cfg.Findings.Path)
-	cursor, err := LoadCursor(cursorPath)
+	eventsRoot, err := os.OpenRoot(cfg.Events.Path)
 	if err != nil {
+		return nil, err
+	}
+	findingsRoot, err := os.OpenRoot(cfg.Findings.Path)
+	if err != nil {
+		_ = eventsRoot.Close()
+		return nil, err
+	}
+	cursor, err := loadCursor(findingsRoot, ".cursor.json")
+	if err != nil {
+		_ = eventsRoot.Close()
+		_ = findingsRoot.Close()
 		return nil, fmt.Errorf("load cursor: %w", err)
 	}
 
 	return &Analyzer{
-		cfg:        cfg,
-		plugins:    plugins,
-		detectors:  detectors,
-		cursor:     cursor,
-		cursorPath: cursorPath,
-		logger:     logger,
+		cfg:          cfg,
+		plugins:      plugins,
+		detectors:    detectors,
+		cursor:       cursor,
+		eventsRoot:   eventsRoot,
+		findingsRoot: findingsRoot,
+		logger:       logger,
 	}, nil
 }
+
+// Close releases pinned directories after Run/Poll have stopped.
+func (a *Analyzer) Close() error { return errors.Join(a.eventsRoot.Close(), a.findingsRoot.Close()) }
 
 // Run starts the polling loop.  It blocks until ctx is cancelled.
 func (a *Analyzer) Run(ctx context.Context) error {
@@ -114,7 +130,7 @@ func (a *Analyzer) poll(ctx context.Context) error {
 			return ctx.Err()
 		}
 
-		name := filepath.Base(path)
+		name := path
 		fc := a.cursor.Get(name)
 
 		events, newOffset, err := a.readNewEvents(path, fc.Offset)
@@ -160,8 +176,8 @@ func (a *Analyzer) poll(ctx context.Context) error {
 		)
 	}
 
-	if err := a.cursor.Save(a.cursorPath); err != nil {
-		a.logger.Error("save cursor error", "err", err)
+	if err := a.cursor.save(a.findingsRoot, ".cursor.json"); err != nil {
+		return fmt.Errorf("save cursor: %w", err)
 	}
 
 	return nil
@@ -171,7 +187,7 @@ func (a *Analyzer) poll(ctx context.Context) error {
 // tenant subdirectories), sorted by path (chronological for date-bucketed files).
 func (a *Analyzer) eventFiles() ([]string, error) {
 	var paths []string
-	err := filepath.WalkDir(a.cfg.Events.Path, func(path string, d os.DirEntry, err error) error {
+	err := fs.WalkDir(a.eventsRoot.FS(), ".", func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -191,7 +207,7 @@ func (a *Analyzer) eventFiles() ([]string, error) {
 // Returns the events read and the new file offset (byte position after the
 // last complete line consumed).
 func (a *Analyzer) readNewEvents(path string, offset int64) ([]*types.Event, int64, error) {
-	f, err := os.Open(path)
+	f, err := a.eventsRoot.Open(path)
 	if err != nil {
 		return nil, offset, fmt.Errorf("open %s: %w", path, err)
 	}
@@ -258,9 +274,9 @@ func (a *Analyzer) runDetectors(events []*types.Event) []Finding {
 // writeFindings appends findings as JSONL to the findings file for today.
 func (a *Analyzer) writeFindings(findings []Finding) error {
 	today := time.Now().UTC().Format("2006-01-02")
-	path := filepath.Join(a.cfg.Findings.Path, "findings-"+today+".jsonl")
+	path := "findings-" + today + ".jsonl"
 
-	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o640)
+	f, err := a.findingsRoot.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o640)
 	if err != nil {
 		return fmt.Errorf("open findings file %s: %w", path, err)
 	}

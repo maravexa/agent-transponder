@@ -109,6 +109,7 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("create analyzer: %w", err)
 	}
+	defer func() { _ = az.Close() }()
 
 	// -- Context with graceful shutdown --------------------------------------
 	ctx, cancel := context.WithCancel(context.Background())
@@ -139,7 +140,9 @@ func run() error {
 	}()
 
 	// -- Start analyzer loop -------------------------------------------------
+	analyzerDone := make(chan struct{})
 	go func() {
+		defer close(analyzerDone)
 		if err := az.Run(ctx); err != nil {
 			errCh <- err
 		}
@@ -158,6 +161,8 @@ func run() error {
 	defer shutCancel()
 	_ = healthSrv.Shutdown(shutCtx)
 
+	cancel()
+	<-analyzerDone
 	logger.Info("at-analyzer stopped")
 	return nil
 }
