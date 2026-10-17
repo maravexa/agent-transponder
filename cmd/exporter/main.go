@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io/fs"
 	"log/slog"
 	"net/http"
 	"os"
@@ -243,8 +244,19 @@ func collectLoop(ctx context.Context, col *metrics.Collector, storePath string, 
 func collectFindingsMetrics(col *metrics.Collector, findingsPath string, logger *slog.Logger) {
 	col.FindingsTotal.Reset()
 
-	err := filepath.Walk(findingsPath, func(path string, info os.FileInfo, err error) error {
-		if err != nil || info.IsDir() || filepath.Ext(path) != ".jsonl" {
+	root, err := os.OpenRoot(findingsPath)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			logger.Warn("findings root error", "path", findingsPath, "err", err)
+		}
+		return
+	}
+	defer func() { _ = root.Close() }()
+
+	// Keep both traversal and file opens confined to the findings directory,
+	// even if a file or directory is replaced with a symlink during collection.
+	err = fs.WalkDir(root.FS(), ".", func(path string, entry fs.DirEntry, err error) error {
+		if err != nil || entry.IsDir() || filepath.Ext(path) != ".jsonl" {
 			return err
 		}
 		// Skip cursor file used by the analyzer.
@@ -252,7 +264,7 @@ func collectFindingsMetrics(col *metrics.Collector, findingsPath string, logger 
 			return nil
 		}
 
-		f, err := os.Open(path)
+		f, err := root.Open(path)
 		if err != nil {
 			logger.Warn("failed to open findings file", "path", path, "err", err)
 			return nil

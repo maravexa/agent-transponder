@@ -16,8 +16,7 @@ from agent_transponder.events import (
     ResponseData,
     ToolCallData,
 )
-from agent_transponder.hmac import sign_event, verify_event, _canonical_json
-
+from agent_transponder.hmac import _canonical_json, sign_event, verify_event
 
 # ---------------------------------------------------------------------------
 # Helpers

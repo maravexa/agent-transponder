@@ -5,13 +5,12 @@ No proto imports — these are plain Python dataclasses.
 
 from __future__ import annotations
 
-import time
 import os
+import time
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import IntEnum
-from typing import Any, Dict, List, Optional
-
+from typing import Any
 
 # ---------------------------------------------------------------------------
 # UUIDv7 — time-ordered, stdlib only
@@ -67,7 +66,7 @@ class Severity(IntEnum):
 
 # String representations matching Go's EventType and Severity string constants.
 # These must match exactly what Go's json.Marshal produces for the string types.
-_EVENT_TYPE_STR: Dict[EventType, str] = {
+_EVENT_TYPE_STR: dict[EventType, str] = {
     EventType.UNSPECIFIED: "unspecified",
     EventType.PROMPT: "prompt",
     EventType.RESPONSE: "response",
@@ -81,7 +80,7 @@ _EVENT_TYPE_STR: Dict[EventType, str] = {
     EventType.METADATA: "metadata",
 }
 
-_SEVERITY_STR: Dict[Severity, str] = {
+_SEVERITY_STR: dict[Severity, str] = {
     Severity.UNSPECIFIED: "unspecified",
     Severity.DEBUG: "debug",
     Severity.INFO: "info",
@@ -94,7 +93,7 @@ _SEVERITY_STR: Dict[Severity, str] = {
 _GO_ZERO_TIME = "0001-01-01T00:00:00Z"
 
 
-def _fmt_ts(dt: Optional[datetime]) -> str:
+def _fmt_ts(dt: datetime | None) -> str:
     """Format a datetime as RFC3339 with Z suffix, matching Go's time.Time.MarshalJSON.
 
     Returns Go's zero time string when dt is None.
@@ -102,7 +101,7 @@ def _fmt_ts(dt: Optional[datetime]) -> str:
     if dt is None:
         return _GO_ZERO_TIME
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
+        dt = dt.replace(tzinfo=UTC)
     s = dt.isoformat()
     # Python uses +00:00 for UTC; Go uses Z
     if s.endswith("+00:00"):
@@ -135,8 +134,8 @@ class ResponseData:
 @dataclass
 class ToolCallData:
     tool_name: str = ""
-    arguments: Dict[str, Any] = field(default_factory=dict)
-    result: Dict[str, Any] = field(default_factory=dict)
+    arguments: dict[str, Any] = field(default_factory=dict)
+    result: dict[str, Any] = field(default_factory=dict)
     success: bool = False
     error_msg: str = ""
     retry_count: int = 0
@@ -258,34 +257,34 @@ class Event:
     type: EventType = EventType.UNSPECIFIED
     severity: Severity = Severity.INFO
 
-    timestamp: datetime = field(default_factory=lambda: datetime.now(tz=timezone.utc))
+    timestamp: datetime = field(default_factory=lambda: datetime.now(tz=UTC))
     # received_at is set by the ingester; SDK leaves it as None (serialises to Go zero time)
-    received_at: Optional[datetime] = None
+    received_at: datetime | None = None
 
     duration_ms: float = 0.0
 
     # Payload — at most one should be set per event
-    prompt: Optional[PromptData] = None
-    response: Optional[ResponseData] = None
-    tool_call: Optional[ToolCallData] = None
-    memory: Optional[MemoryData] = None
-    reasoning: Optional[ReasoningData] = None
-    error: Optional[ErrorData] = None
+    prompt: PromptData | None = None
+    response: ResponseData | None = None
+    tool_call: ToolCallData | None = None
+    memory: MemoryData | None = None
+    reasoning: ReasoningData | None = None
+    error: ErrorData | None = None
 
     model: str = ""
-    token_usage: Optional[TokenUsage] = None
-    labels: Dict[str, str] = field(default_factory=dict)
+    token_usage: TokenUsage | None = None
+    labels: dict[str, str] = field(default_factory=dict)
 
     # Causal attribution — populated by framework integrations
-    run_id: Optional[str] = None
-    parent_run_id: Optional[str] = None
-    tags: Optional[List[str]] = None
+    run_id: str | None = None
+    parent_run_id: str | None = None
+    tags: list[str] | None = None
 
     # Integrity — computed after construction, before transmission
     hmac: str = ""
 
     # Redaction tracking — set by ingestion after redaction
-    redacted_fields: Optional[List[str]] = None
+    redacted_fields: list[str] | None = None
 
     # ------------------------------------------------------------------
     # Serialisation helpers

@@ -13,11 +13,10 @@ Both must be identical — any difference means the HMAC will never verify.
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from agent_transponder.events import Event, EventType, Severity
 from agent_transponder.hmac import _canonical_json
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -36,8 +35,8 @@ def _minimal_event() -> Event:
         tenant_id="demo",
         type=EventType.PROMPT,
         severity=Severity.INFO,
-        timestamp=datetime(1, 1, 1, tzinfo=timezone.utc),
-        received_at=datetime(1, 1, 1, tzinfo=timezone.utc),
+        timestamp=datetime(1, 1, 1, tzinfo=UTC),
+        received_at=datetime(1, 1, 1, tzinfo=UTC),
     )
 
 
@@ -99,7 +98,7 @@ def test_received_at_defaults_to_go_zero_time():
         tenant_id="t",
         type=EventType.PROMPT,
         severity=Severity.INFO,
-        timestamp=datetime(1, 1, 1, tzinfo=timezone.utc),
+        timestamp=datetime(1, 1, 1, tzinfo=UTC),
         # received_at not set → defaults to None
     )
     data = json.loads(_canonical_json(e))

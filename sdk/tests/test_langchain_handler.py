@@ -11,13 +11,12 @@ from __future__ import annotations
 import time
 import uuid
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
 
 from agent_transponder.integrations.langchain import _CallbackMixin
-
 
 # ---------------------------------------------------------------------------
 # Mock session that records all calls
@@ -54,7 +53,7 @@ class MockSession:
     def record_retry(self, *a: Any, **kw: Any) -> None:
         self._record("record_retry", *a, **kw)
 
-    def last(self, method: str) -> Optional[tuple]:
+    def last(self, method: str) -> tuple | None:
         for name, args, kwargs in reversed(self.calls):
             if name == method:
                 return (args, kwargs)
@@ -78,17 +77,17 @@ class MockMessage:
 @dataclass
 class MockGeneration:
     text: str = "Response text"
-    generation_info: Dict[str, Any] = field(
+    generation_info: dict[str, Any] = field(
         default_factory=lambda: {"finish_reason": "stop"}
     )
 
 
 @dataclass
 class MockLLMResult:
-    generations: List[List[MockGeneration]] = field(
+    generations: list[list[MockGeneration]] = field(
         default_factory=lambda: [[MockGeneration()]]
     )
-    llm_output: Dict[str, Any] = field(
+    llm_output: dict[str, Any] = field(
         default_factory=lambda: {
             "token_usage": {
                 "prompt_tokens": 10,
@@ -102,7 +101,7 @@ class MockLLMResult:
 @dataclass
 class MockDocument:
     page_content: str = "Document content here"
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 # ---------------------------------------------------------------------------
@@ -195,7 +194,7 @@ class TestOnLlmEndRecordsResponse:
         assert kwargs["run_id"] == str(run_id)
 
     def test_duration_calculated(self) -> None:
-        handler, session = make_handler()
+        handler, _session = make_handler()
         run_id = uid()
         handler._store_start(run_id)
         time.sleep(0.02)
@@ -345,7 +344,7 @@ class TestOnRetrieverEndRespectsCaptureFlag:
 
         mem = session.last("record_memory")
         assert mem is not None
-        args, kwargs = mem
+        args, _kwargs = mem
         assert args[0] == "retrieval"
         assert args[1] == "my query"
         # Value should be truncated
@@ -406,8 +405,8 @@ class TestCallbackErrorDoesNotPropagate:
             ) -> None:
                 try:
                     self._handle_chat_model_start(serialized, messages, **kw)
-                except Exception:
-                    pass  # Swallowed, as the real handler does
+                except RuntimeError:
+                    return  # The test session deliberately raises RuntimeError.
 
         wh = WrappingHandler(session)
         # This should not raise
@@ -416,7 +415,7 @@ class TestCallbackErrorDoesNotPropagate:
 
 class TestRunStartsCleanup:
     def test_end_cleans_up(self) -> None:
-        handler, session = make_handler()
+        handler, _session = make_handler()
         run_id = uid()
         handler._store_start(run_id)
         assert handler._pop_start(run_id) is not None
@@ -424,35 +423,35 @@ class TestRunStartsCleanup:
         assert handler._pop_start(run_id) is None
 
     def test_llm_end_cleans_up(self) -> None:
-        handler, session = make_handler()
+        handler, _session = make_handler()
         run_id = uid()
         handler._store_start(run_id)
         handler._handle_llm_end(MockLLMResult(), run_id=run_id)
         assert handler._pop_start(run_id) is None
 
     def test_tool_end_cleans_up(self) -> None:
-        handler, session = make_handler()
+        handler, _session = make_handler()
         run_id = uid()
         handler._handle_tool_start({"name": "t"}, "{}", run_id=run_id)
         handler._handle_tool_end("out", run_id=run_id)
         assert handler._pop_start(run_id) is None
 
     def test_error_cleans_up(self) -> None:
-        handler, session = make_handler()
+        handler, _session = make_handler()
         run_id = uid()
         handler._store_start(run_id)
         handler._handle_llm_error(ValueError("x"), run_id=run_id)
         assert handler._pop_start(run_id) is None
 
     def test_chain_end_cleans_up(self) -> None:
-        handler, session = make_handler()
+        handler, _session = make_handler()
         run_id = uid()
         handler._handle_chain_start({"name": "c", "id": ["C"]}, {}, run_id=run_id)
         handler._handle_chain_end({}, run_id=run_id)
         assert handler._pop_start(run_id) is None
 
     def test_tool_error_cleans_up(self) -> None:
-        handler, session = make_handler()
+        handler, _session = make_handler()
         run_id = uid()
         handler._handle_tool_start({"name": "t"}, "{}", run_id=run_id)
         handler._handle_tool_error(RuntimeError("x"), run_id=run_id)

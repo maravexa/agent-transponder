@@ -12,7 +12,7 @@ import logging
 import threading
 import time
 import traceback
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 try:
     from langchain_core.callbacks import BaseCallbackHandler
@@ -25,7 +25,7 @@ except ImportError:
 logger = logging.getLogger("agent_transponder.langchain")
 
 
-def _format_messages(messages: List[List[BaseMessage]]) -> str:
+def _format_messages(messages: list[list[BaseMessage]]) -> str:
     """Serialize chat messages to a human-readable string."""
     lines: list[str] = []
     for batch in messages:
@@ -36,7 +36,7 @@ def _format_messages(messages: List[List[BaseMessage]]) -> str:
     return "\n".join(lines)
 
 
-def _extract_model_name(serialized: Dict[str, Any]) -> str:
+def _extract_model_name(serialized: dict[str, Any]) -> str:
     """Best-effort model name extraction from LangChain's serialized dict."""
     # Try kwargs.model_name first (ChatOpenAI etc.)
     model = serialized.get("kwargs", {}).get("model_name")
@@ -64,7 +64,7 @@ class _CallbackMixin:
         self._capture_prompts = capture_prompts
         self._capture_retriever_content = capture_retriever_content
         self._retriever_content_max_chars = retriever_content_max_chars
-        self._run_starts: Dict[str, Tuple[Any, ...]] = {}
+        self._run_starts: dict[str, tuple[Any, ...]] = {}
         self._lock = threading.Lock()
 
     # -- helpers ----------------------------------------------------------
@@ -74,7 +74,7 @@ class _CallbackMixin:
         with self._lock:
             self._run_starts[key] = (time.monotonic(), *data)
 
-    def _pop_start(self, run_id: Any) -> Optional[Tuple[Any, ...]]:
+    def _pop_start(self, run_id: Any) -> tuple[Any, ...] | None:
         key = str(run_id)
         with self._lock:
             return self._run_starts.pop(key, None)
@@ -85,20 +85,20 @@ class _CallbackMixin:
     def _rid(self, run_id: Any) -> str:
         return str(run_id)
 
-    def _prid(self, parent_run_id: Any) -> Optional[str]:
+    def _prid(self, parent_run_id: Any) -> str | None:
         return str(parent_run_id) if parent_run_id is not None else None
 
     # -- callback implementations -----------------------------------------
 
     def _handle_chat_model_start(
         self,
-        serialized: Dict[str, Any],
-        messages: List[List[Any]],
+        serialized: dict[str, Any],
+        messages: list[list[Any]],
         *,
         run_id: Any,
         parent_run_id: Any = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> None:
         self._store_start(run_id)
@@ -117,13 +117,13 @@ class _CallbackMixin:
 
     def _handle_llm_start(
         self,
-        serialized: Dict[str, Any],
-        prompts: List[str],
+        serialized: dict[str, Any],
+        prompts: list[str],
         *,
         run_id: Any,
         parent_run_id: Any = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> None:
         self._store_start(run_id)
@@ -190,6 +190,7 @@ class _CallbackMixin:
                 traceback.format_exception(type(error), error, error.__traceback__)
             )
         except Exception:
+            logger.exception("Could not format the LLM error traceback")
             tb = ""
         self._session.record_error(
             type(error).__name__,
@@ -202,13 +203,13 @@ class _CallbackMixin:
 
     def _handle_tool_start(
         self,
-        serialized: Dict[str, Any],
+        serialized: dict[str, Any],
         input_str: str,
         *,
         run_id: Any,
         parent_run_id: Any = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> None:
         tool_name = serialized.get("name", serialized.get("id", ["unknown"])[-1])
@@ -225,7 +226,7 @@ class _CallbackMixin:
         start_data = self._pop_start(run_id)
         if start_data is None:
             return
-        start_time, tool_name, input_str, tags, stored_parent = start_data
+        _start_time, tool_name, input_str, tags, _stored_parent = start_data
 
         try:
             args = json.loads(input_str)
@@ -273,13 +274,13 @@ class _CallbackMixin:
 
     def _handle_chain_start(
         self,
-        serialized: Dict[str, Any],
-        inputs: Dict[str, Any],
+        serialized: dict[str, Any],
+        inputs: dict[str, Any],
         *,
         run_id: Any,
         parent_run_id: Any = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> None:
         self._store_start(run_id)
@@ -299,7 +300,7 @@ class _CallbackMixin:
 
     def _handle_chain_end(
         self,
-        outputs: Dict[str, Any],
+        outputs: dict[str, Any],
         *,
         run_id: Any,
         parent_run_id: Any = None,
@@ -332,7 +333,7 @@ class _CallbackMixin:
 
     def _handle_retriever_start(
         self,
-        serialized: Dict[str, Any],
+        serialized: dict[str, Any],
         query: str,
         *,
         run_id: Any,
@@ -415,13 +416,13 @@ if HAS_LANGCHAIN:
 
         def on_chat_model_start(
             self,
-            serialized: Dict[str, Any],
-            messages: List[List[Any]],
+            serialized: dict[str, Any],
+            messages: list[list[Any]],
             *,
             run_id: Any,
             parent_run_id: Any = None,
-            tags: Optional[List[str]] = None,
-            metadata: Optional[Dict[str, Any]] = None,
+            tags: list[str] | None = None,
+            metadata: dict[str, Any] | None = None,
             **kwargs: Any,
         ) -> None:
             try:
@@ -439,13 +440,13 @@ if HAS_LANGCHAIN:
 
         def on_llm_start(
             self,
-            serialized: Dict[str, Any],
-            prompts: List[str],
+            serialized: dict[str, Any],
+            prompts: list[str],
             *,
             run_id: Any,
             parent_run_id: Any = None,
-            tags: Optional[List[str]] = None,
-            metadata: Optional[Dict[str, Any]] = None,
+            tags: list[str] | None = None,
+            metadata: dict[str, Any] | None = None,
             **kwargs: Any,
         ) -> None:
             try:
@@ -493,13 +494,13 @@ if HAS_LANGCHAIN:
 
         def on_tool_start(
             self,
-            serialized: Dict[str, Any],
+            serialized: dict[str, Any],
             input_str: str,
             *,
             run_id: Any,
             parent_run_id: Any = None,
-            tags: Optional[List[str]] = None,
-            metadata: Optional[Dict[str, Any]] = None,
+            tags: list[str] | None = None,
+            metadata: dict[str, Any] | None = None,
             **kwargs: Any,
         ) -> None:
             try:
@@ -542,13 +543,13 @@ if HAS_LANGCHAIN:
 
         def on_chain_start(
             self,
-            serialized: Dict[str, Any],
-            inputs: Dict[str, Any],
+            serialized: dict[str, Any],
+            inputs: dict[str, Any],
             *,
             run_id: Any,
             parent_run_id: Any = None,
-            tags: Optional[List[str]] = None,
-            metadata: Optional[Dict[str, Any]] = None,
+            tags: list[str] | None = None,
+            metadata: dict[str, Any] | None = None,
             **kwargs: Any,
         ) -> None:
             try:
@@ -566,7 +567,7 @@ if HAS_LANGCHAIN:
 
         def on_chain_end(
             self,
-            outputs: Dict[str, Any],
+            outputs: dict[str, Any],
             *,
             run_id: Any,
             parent_run_id: Any = None,
@@ -596,7 +597,7 @@ if HAS_LANGCHAIN:
 
         def on_retriever_start(
             self,
-            serialized: Dict[str, Any],
+            serialized: dict[str, Any],
             query: str,
             *,
             run_id: Any,

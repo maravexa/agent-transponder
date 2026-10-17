@@ -5,7 +5,6 @@ SDK configuration dataclass.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Optional
 
 
 @dataclass
@@ -16,9 +15,9 @@ class TransponderConfig:
     endpoint: str = "localhost:8443"
 
     # mTLS material (paths to PEM files)
-    ca_cert: Optional[str] = None
-    client_cert: Optional[str] = None
-    client_key: Optional[str] = None
+    ca_cert: str | None = None
+    client_cert: str | None = None
+    client_key: str | None = None
 
     # HMAC signing key — shared secret between agent and ingestion API
     hmac_key: bytes = field(default_factory=bytes)
