@@ -49,6 +49,7 @@ jobs:
       - name: Go security lint (gosec)
         run: |
           go install github.com/securego/gosec/v2/cmd/gosec@latest
+          mkdir -p reports
           gosec -fmt=json -out=reports/gosec.json ./... || true
 
       - uses: actions/upload-artifact@v4
