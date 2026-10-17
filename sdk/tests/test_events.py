@@ -17,11 +17,10 @@ from agent_transponder.events import (
     ReasoningData,
     ResponseData,
     Severity,
-    ToolCallData,
     TokenUsage,
+    ToolCallData,
     uuid7,
 )
-
 
 # ---------------------------------------------------------------------------
 # UUIDv7 tests
@@ -230,8 +229,7 @@ def test_to_dict_timestamp_is_iso():
     assert d["timestamp"].endswith("Z"), (
         f"timestamp must end with 'Z': {d['timestamp']!r}"
     )
-    # Replace Z for compatibility with Python < 3.11 fromisoformat
-    parsed = datetime.fromisoformat(d["timestamp"][:-1] + "+00:00")
+    parsed = datetime.fromisoformat(d["timestamp"])
     assert parsed.tzinfo is not None
 
 

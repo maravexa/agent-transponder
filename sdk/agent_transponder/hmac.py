@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def _canonical_json(event: "Event") -> bytes:
+def _canonical_json(event: Event) -> bytes:
     """Return the canonical JSON bytes of an event, EXCLUDING the hmac field.
 
     Keys are sorted to ensure a deterministic serialisation regardless of
@@ -29,7 +29,7 @@ def _canonical_json(event: "Event") -> bytes:
     )
 
 
-def sign_event(event: "Event", key: bytes) -> str:
+def sign_event(event: Event, key: bytes) -> str:
     """Compute HMAC-SHA256 over the canonical JSON of *event*.
 
     Returns the hex-encoded digest and sets ``event.hmac`` in-place.
@@ -41,7 +41,7 @@ def sign_event(event: "Event", key: bytes) -> str:
     return digest
 
 
-def verify_event(event: "Event", key: bytes) -> bool:
+def verify_event(event: Event, key: bytes) -> bool:
     """Verify the HMAC on *event*.
 
     Returns ``True`` if the stored HMAC matches the recomputed one.

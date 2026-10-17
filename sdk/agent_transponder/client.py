@@ -11,13 +11,9 @@ import logging
 import queue
 import threading
 import time
-from typing import TYPE_CHECKING
 
 from .config import TransponderConfig
 from .events import Event
-
-if TYPE_CHECKING:
-    pass  # grpc types only used at runtime
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +76,9 @@ class GrpcTransport:
         # Try package-local stubs first (installed via pip after `make proto-python`),
         # then fall back to repo-root stubs (development with PYTHONPATH=.).
         try:
-            from agent_transponder.agenttransponder.v1 import events_pb2_grpc  # type: ignore[import]
+            from agent_transponder.agenttransponder.v1 import (
+                events_pb2_grpc,  # type: ignore[import]
+            )
 
             self._stub = events_pb2_grpc.EventIngestionStub(channel)
             self._use_generated_stub = True
@@ -105,7 +103,9 @@ class GrpcTransport:
             return False
         try:
             try:
-                from agent_transponder.agenttransponder.v1 import events_pb2  # type: ignore[import]
+                from agent_transponder.agenttransponder.v1 import (
+                    events_pb2,  # type: ignore[import]
+                )
             except ImportError:
                 from agenttransponder.v1 import events_pb2  # type: ignore[import]
 
@@ -123,7 +123,9 @@ class GrpcTransport:
             return False
         try:
             try:
-                from agent_transponder.agenttransponder.v1 import events_pb2  # type: ignore[import]
+                from agent_transponder.agenttransponder.v1 import (
+                    events_pb2,  # type: ignore[import]
+                )
             except ImportError:
                 from agenttransponder.v1 import events_pb2  # type: ignore[import]
 
@@ -150,14 +152,14 @@ class GrpcTransport:
             try:
                 self._channel.close()
             except Exception:  # noqa: BLE001
-                pass
+                logger.debug("Could not close the gRPC channel")
             self._channel = None
             self._stub = None
 
 
 def _event_to_proto(event: Event, pb2: object) -> object:
     """Convert an SDK Event to the protobuf Event message."""
-    from google.protobuf import timestamp_pb2, struct_pb2  # type: ignore[import]
+    from google.protobuf import struct_pb2, timestamp_pb2  # type: ignore[import]
 
     ts = timestamp_pb2.Timestamp()
     ts.FromDatetime(event.timestamp)

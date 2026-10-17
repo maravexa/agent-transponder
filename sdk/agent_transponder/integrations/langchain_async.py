@@ -8,7 +8,7 @@ LangChain callback handler.
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 try:
     from langchain_core.callbacks import AsyncCallbackHandler
@@ -47,13 +47,13 @@ if HAS_LANGCHAIN:
 
         async def on_chat_model_start(
             self,
-            serialized: Dict[str, Any],
-            messages: List[List[Any]],
+            serialized: dict[str, Any],
+            messages: list[list[Any]],
             *,
             run_id: Any,
             parent_run_id: Any = None,
-            tags: Optional[List[str]] = None,
-            metadata: Optional[Dict[str, Any]] = None,
+            tags: list[str] | None = None,
+            metadata: dict[str, Any] | None = None,
             **kwargs: Any,
         ) -> None:
             try:
@@ -71,13 +71,13 @@ if HAS_LANGCHAIN:
 
         async def on_llm_start(
             self,
-            serialized: Dict[str, Any],
-            prompts: List[str],
+            serialized: dict[str, Any],
+            prompts: list[str],
             *,
             run_id: Any,
             parent_run_id: Any = None,
-            tags: Optional[List[str]] = None,
-            metadata: Optional[Dict[str, Any]] = None,
+            tags: list[str] | None = None,
+            metadata: dict[str, Any] | None = None,
             **kwargs: Any,
         ) -> None:
             try:
@@ -125,13 +125,13 @@ if HAS_LANGCHAIN:
 
         async def on_tool_start(
             self,
-            serialized: Dict[str, Any],
+            serialized: dict[str, Any],
             input_str: str,
             *,
             run_id: Any,
             parent_run_id: Any = None,
-            tags: Optional[List[str]] = None,
-            metadata: Optional[Dict[str, Any]] = None,
+            tags: list[str] | None = None,
+            metadata: dict[str, Any] | None = None,
             **kwargs: Any,
         ) -> None:
             try:
@@ -174,13 +174,13 @@ if HAS_LANGCHAIN:
 
         async def on_chain_start(
             self,
-            serialized: Dict[str, Any],
-            inputs: Dict[str, Any],
+            serialized: dict[str, Any],
+            inputs: dict[str, Any],
             *,
             run_id: Any,
             parent_run_id: Any = None,
-            tags: Optional[List[str]] = None,
-            metadata: Optional[Dict[str, Any]] = None,
+            tags: list[str] | None = None,
+            metadata: dict[str, Any] | None = None,
             **kwargs: Any,
         ) -> None:
             try:
@@ -198,7 +198,7 @@ if HAS_LANGCHAIN:
 
         async def on_chain_end(
             self,
-            outputs: Dict[str, Any],
+            outputs: dict[str, Any],
             *,
             run_id: Any,
             parent_run_id: Any = None,
@@ -228,7 +228,7 @@ if HAS_LANGCHAIN:
 
         async def on_retriever_start(
             self,
-            serialized: Dict[str, Any],
+            serialized: dict[str, Any],
             query: str,
             *,
             run_id: Any,

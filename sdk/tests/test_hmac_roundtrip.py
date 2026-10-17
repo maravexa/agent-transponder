@@ -16,7 +16,7 @@ differ.
 
 from __future__ import annotations
 
-from datetime import timezone
+from datetime import UTC
 
 import pytest
 
@@ -65,7 +65,7 @@ def _reconstruct_from_proto(proto_event, pb2) -> Event:
 
     # Restore timestamp
     if proto_event.HasField("timestamp"):
-        restored.timestamp = proto_event.timestamp.ToDatetime(tzinfo=timezone.utc)
+        restored.timestamp = proto_event.timestamp.ToDatetime(tzinfo=UTC)
 
     # Restore prompt
     if proto_event.HasField("prompt"):

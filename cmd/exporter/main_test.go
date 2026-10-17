@@ -1,11 +1,17 @@
 package main
 
 import (
+	"io"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/agent-transponder/agent-transponder/internal/metrics"
 )
 
 func TestLoadConfig_Defaults(t *testing.T) {
@@ -94,7 +100,7 @@ func TestLoadConfig_MissingFile(t *testing.T) {
 }
 
 func TestHealthHandler(t *testing.T) {
-	req := httptest.NewRequest(http.MethodGet, "/health", nil)
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/health", nil)
 	rr := httptest.NewRecorder()
 
 	healthHandler(rr, req)
@@ -108,6 +114,51 @@ func TestHealthHandler(t *testing.T) {
 	body := rr.Body.String()
 	if body == "" {
 		t.Error("expected non-empty JSON body")
+	}
+}
+
+func TestCollectFindingsMetrics_ConfinesReadsToFindingsRoot(t *testing.T) {
+	root := t.TempDir()
+	nested := filepath.Join(root, "tenant")
+	if err := os.Mkdir(nested, 0700); err != nil {
+		t.Fatal(err)
+	}
+	inside := filepath.Join(nested, "findings.jsonl")
+	if err := os.WriteFile(inside, []byte("{\"type\":\"inside\",\"severity\":\"info\",\"detector\":\"test\"}\ninvalid json\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	outside := filepath.Join(t.TempDir(), "outside.jsonl")
+	if err := os.WriteFile(outside, []byte("{\"type\":\"outside\",\"severity\":\"info\",\"detector\":\"test\"}\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(outside, filepath.Join(root, "escape.jsonl")); err != nil {
+		t.Fatal(err)
+	}
+	reg := prometheus.NewRegistry()
+	col := metrics.NewCollector(reg)
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	for _, expected := range []float64{1, 0} {
+		collectFindingsMetrics(col, root, logger)
+		families, err := reg.Gather()
+		if err != nil {
+			t.Fatal(err)
+		}
+		var count float64
+		for _, family := range families {
+			if family.GetName() == "flight_recorder_findings_total" {
+				for _, metric := range family.Metric {
+					count += metric.GetCounter().GetValue()
+				}
+			}
+		}
+		if count != expected {
+			t.Fatalf("findings count: want %v, got %v", expected, count)
+		}
+		if expected == 1 {
+			if err := os.Remove(inside); err != nil {
+				t.Fatal(err)
+			}
+		}
 	}
 }
 

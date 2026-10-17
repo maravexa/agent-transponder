@@ -8,6 +8,8 @@ Agent Transponder is an observability and safety platform that captures detailed
 
 The v0.1.0 PoC is functional and deployed via Ansible.
 
+Building the Go services requires Go 1.26 or newer; CI and container builds use Go 1.26.9.
+
 ## Features
 
 - **Structured telemetry capture** — prompts, responses, tool calls, memory operations, reasoning traces, errors, and token usage

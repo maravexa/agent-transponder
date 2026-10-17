@@ -29,26 +29,26 @@ from __future__ import annotations
 import logging
 import queue
 import threading
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from datetime import UTC, datetime
+from typing import Any, Self
 
 from .config import TransponderConfig
 from .events import (
+    ErrorData,
     Event,
     EventType,
-    Severity,
-    ErrorData,
     MemoryData,
     PromptData,
     ReasoningData,
     ResponseData,
-    ToolCallData,
+    Severity,
     TokenUsage,
+    ToolCallData,
     uuid7,
 )
 from .hmac import sign_event
 
-__all__ = ["Transponder", "Event", "TokenUsage", "configure"]
+__all__ = ["Event", "TokenUsage", "Transponder", "configure"]
 
 logger = logging.getLogger(__name__)
 
@@ -64,9 +64,7 @@ class Session:
     Obtain via :py:meth:`Transponder.session`.
     """
 
-    def __init__(
-        self, transponder: "Transponder", session_id: Optional[str] = None
-    ) -> None:
+    def __init__(self, transponder: Transponder, session_id: str | None = None) -> None:
         self._tp = transponder
         self._session_id = session_id or uuid7()
 
@@ -78,10 +76,10 @@ class Session:
     # Context manager protocol
     # ------------------------------------------------------------------
 
-    def __enter__(self) -> "Session":
+    def __enter__(self) -> Self:
         return self
 
-    def __exit__(self, *args: Any) -> None:
+    def __exit__(self, *args: object) -> None:
         self._tp.flush()
 
     # ------------------------------------------------------------------
@@ -100,10 +98,10 @@ class Session:
         model: str = "",
         token_count: int = 0,
         severity: Severity = Severity.INFO,
-        labels: Optional[Dict[str, str]] = None,
-        run_id: Optional[str] = None,
-        parent_run_id: Optional[str] = None,
-        tags: Optional[List[str]] = None,
+        labels: dict[str, str] | None = None,
+        run_id: str | None = None,
+        parent_run_id: str | None = None,
+        tags: list[str] | None = None,
     ) -> Event:
         """Record a prompt event."""
         event = Event(
@@ -129,10 +127,10 @@ class Session:
         tokens: int = 0,
         model: str = "",
         severity: Severity = Severity.INFO,
-        labels: Optional[Dict[str, str]] = None,
-        run_id: Optional[str] = None,
-        parent_run_id: Optional[str] = None,
-        tags: Optional[List[str]] = None,
+        labels: dict[str, str] | None = None,
+        run_id: str | None = None,
+        parent_run_id: str | None = None,
+        tags: list[str] | None = None,
     ) -> Event:
         """Record a model response event."""
         event = Event(
@@ -158,16 +156,16 @@ class Session:
         self,
         tool_name: str,
         *,
-        args: Optional[Dict[str, Any]] = None,
-        result: Optional[Dict[str, Any]] = None,
+        args: dict[str, Any] | None = None,
+        result: dict[str, Any] | None = None,
         success: bool = True,
         error_msg: str = "",
         retry_count: int = 0,
         severity: Severity = Severity.INFO,
-        labels: Optional[Dict[str, str]] = None,
-        run_id: Optional[str] = None,
-        parent_run_id: Optional[str] = None,
-        tags: Optional[List[str]] = None,
+        labels: dict[str, str] | None = None,
+        run_id: str | None = None,
+        parent_run_id: str | None = None,
+        tags: list[str] | None = None,
     ) -> Event:
         """Record a tool call event."""
         event = Event(
@@ -199,10 +197,10 @@ class Session:
         stacktrace: str = "",
         retryable: bool = False,
         severity: Severity = Severity.ERROR,
-        labels: Optional[Dict[str, str]] = None,
-        run_id: Optional[str] = None,
-        parent_run_id: Optional[str] = None,
-        tags: Optional[List[str]] = None,
+        labels: dict[str, str] | None = None,
+        run_id: str | None = None,
+        parent_run_id: str | None = None,
+        tags: list[str] | None = None,
     ) -> Event:
         """Record an error event."""
         event = Event(
@@ -230,10 +228,10 @@ class Session:
         *,
         step: int = 0,
         severity: Severity = Severity.DEBUG,
-        labels: Optional[Dict[str, str]] = None,
-        run_id: Optional[str] = None,
-        parent_run_id: Optional[str] = None,
-        tags: Optional[List[str]] = None,
+        labels: dict[str, str] | None = None,
+        run_id: str | None = None,
+        parent_run_id: str | None = None,
+        tags: list[str] | None = None,
     ) -> Event:
         """Record a reasoning-step event."""
         event = Event(
@@ -257,10 +255,10 @@ class Session:
         value: str = "",
         *,
         severity: Severity = Severity.DEBUG,
-        labels: Optional[Dict[str, str]] = None,
-        run_id: Optional[str] = None,
-        parent_run_id: Optional[str] = None,
-        tags: Optional[List[str]] = None,
+        labels: dict[str, str] | None = None,
+        run_id: str | None = None,
+        parent_run_id: str | None = None,
+        tags: list[str] | None = None,
     ) -> Event:
         """Record a memory read/write event."""
         etype = (
@@ -286,10 +284,10 @@ class Session:
         self,
         *,
         severity: Severity = Severity.DEBUG,
-        labels: Optional[Dict[str, str]] = None,
-        run_id: Optional[str] = None,
-        parent_run_id: Optional[str] = None,
-        tags: Optional[List[str]] = None,
+        labels: dict[str, str] | None = None,
+        run_id: str | None = None,
+        parent_run_id: str | None = None,
+        tags: list[str] | None = None,
         duration_ms: float = 0.0,
     ) -> Event:
         """Record a metadata event."""
@@ -311,10 +309,10 @@ class Session:
         self,
         *,
         severity: Severity = Severity.WARNING,
-        labels: Optional[Dict[str, str]] = None,
-        run_id: Optional[str] = None,
-        parent_run_id: Optional[str] = None,
-        tags: Optional[List[str]] = None,
+        labels: dict[str, str] | None = None,
+        run_id: str | None = None,
+        parent_run_id: str | None = None,
+        tags: list[str] | None = None,
     ) -> Event:
         """Record a retry event."""
         event = Event(
@@ -349,9 +347,9 @@ class Transponder:
         self,
         *,
         endpoint: str = "localhost:8443",
-        ca_cert: Optional[str] = None,
-        client_cert: Optional[str] = None,
-        client_key: Optional[str] = None,
+        ca_cert: str | None = None,
+        client_cert: str | None = None,
+        client_key: str | None = None,
         hmac_key: bytes = b"",
         agent_id: str = "",
         tenant_id: str = "",
@@ -374,7 +372,7 @@ class Transponder:
         self._queue: queue.Queue[Any] = queue.Queue(maxsize=queue_maxsize)
         self._lock = threading.Lock()
         self._closed = False
-        self._sender: Optional[Any] = None
+        self._sender: Any | None = None
         self._start_sender()
 
     # ------------------------------------------------------------------
@@ -404,7 +402,7 @@ class Transponder:
     # Public API
     # ------------------------------------------------------------------
 
-    def session(self, session_id: Optional[str] = None) -> Session:
+    def session(self, session_id: str | None = None) -> Session:
         """Return a new :class:`Session` context manager."""
         return Session(self, session_id=session_id)
 
@@ -412,16 +410,16 @@ class Transponder:
         """Block until the queue is empty or *timeout* seconds elapse."""
         try:
             # join() on a Queue is not available in Python — poll instead
-            deadline = datetime.now(tz=timezone.utc).timestamp() + timeout
+            deadline = datetime.now(tz=UTC).timestamp() + timeout
             while not self._queue.empty():
-                remaining = deadline - datetime.now(tz=timezone.utc).timestamp()
+                remaining = deadline - datetime.now(tz=UTC).timestamp()
                 if remaining <= 0:
                     break
                 import time
 
                 time.sleep(0.05)
         except Exception:  # noqa: BLE001
-            pass
+            logger.debug("Could not finish flushing pending events")
 
     def close(self) -> None:
         """Flush pending events and shut down the background sender."""
@@ -432,10 +430,10 @@ class Transponder:
         if self._sender is not None:
             self._sender.stop(timeout=self._cfg.shutdown_timeout_sec)
 
-    def __enter__(self) -> "Transponder":
+    def __enter__(self) -> Self:
         return self
 
-    def __exit__(self, *args: Any) -> None:
+    def __exit__(self, *args: object) -> None:
         self.close()
 
 
@@ -443,16 +441,16 @@ class Transponder:
 # Module-level configure() convenience helper
 # ---------------------------------------------------------------------------
 
-_default_transponder: Optional[Transponder] = None
+_default_transponder: Transponder | None = None
 _default_lock = threading.Lock()
 
 
 def configure(
     *,
     endpoint: str = "localhost:8443",
-    ca_cert: Optional[str] = None,
-    client_cert: Optional[str] = None,
-    client_key: Optional[str] = None,
+    ca_cert: str | None = None,
+    client_cert: str | None = None,
+    client_key: str | None = None,
     hmac_key: bytes = b"",
     agent_id: str = "",
     tenant_id: str = "",
