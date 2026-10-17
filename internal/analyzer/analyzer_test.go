@@ -105,6 +105,7 @@ func TestAnalyzer_EndToEnd(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	t.Cleanup(func() { _ = az.Close() })
 
 	// Write a repeating loop pattern: [search, write] × 3 = 6 events.
 	base := time.Now()
@@ -161,6 +162,7 @@ func TestAnalyzer_CursorResumeFromOffset(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	t.Cleanup(func() { _ = az.Close() })
 
 	eventsFile := filepath.Join(eventsDir, "events-resume.jsonl")
 	base := time.Now()

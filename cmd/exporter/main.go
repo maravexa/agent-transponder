@@ -308,28 +308,31 @@ func collectStoreMetrics(col *metrics.Collector, storePath string, logger *slog.
 	tenantEvents := make(map[string]int64)
 	var buckets int64
 
-	err := filepath.Walk(storePath, func(path string, info os.FileInfo, err error) error {
-		if err != nil || info.IsDir() || filepath.Ext(path) != ".jsonl" {
+	root, err := os.OpenRoot(storePath)
+	if err != nil {
+		logger.Warn("store root error", "err", err)
+		return
+	}
+	defer func() { _ = root.Close() }()
+	col.StorageBytes.Reset()
+	col.EventsStored.Reset()
+	err = fs.WalkDir(root.FS(), ".", func(path string, entry fs.DirEntry, err error) error {
+		if err != nil || entry.IsDir() || filepath.Ext(path) != ".jsonl" {
 			return err
 		}
 
-		rel, relErr := filepath.Rel(storePath, path)
-		if relErr != nil {
-			return nil
-		}
-		tenant := filepath.Dir(rel)
+		tenant := filepath.Dir(path)
 		if tenant == "." {
 			tenant = "_default"
 		}
 
-		tenantBytes[tenant] += info.Size()
-		buckets++
-
-		n, countErr := countLines(path)
+		n, size, countErr := countLines(root, path)
 		if countErr != nil {
 			logger.Warn("failed to count lines", "path", path, "err", countErr)
 			return nil
 		}
+		tenantBytes[tenant] += size
+		buckets++
 		tenantEvents[tenant] += n
 		return nil
 	})
@@ -348,13 +351,17 @@ func collectStoreMetrics(col *metrics.Collector, storePath string, logger *slog.
 }
 
 // countLines counts non-empty lines in a file (one event per line in JSONL format).
-func countLines(path string) (int64, error) {
-	f, err := os.Open(path)
+func countLines(root *os.Root, path string) (int64, int64, error) {
+	f, err := root.Open(path)
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
 	defer func() { _ = f.Close() }()
 
+	info, err := f.Stat()
+	if err != nil {
+		return 0, 0, err
+	}
 	var count int64
 	scanner := bufio.NewScanner(f)
 	scanner.Buffer(make([]byte, 64*1024), 1024*1024)
@@ -363,7 +370,7 @@ func countLines(path string) (int64, error) {
 			count++
 		}
 	}
-	return count, scanner.Err()
+	return count, info.Size(), scanner.Err()
 }
 
 func envOr(key, fallback string) string {
